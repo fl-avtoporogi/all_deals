@@ -502,18 +502,12 @@ if ($channelId) {
     echo "Канал ID: " . htmlspecialchars($channelId) . ", Название: " . htmlspecialchars($channelName ?: 'не найдено') . "<br>";
 }
 
-// Выводим для отладки информацию о датах
-echo "DATE_CREATE в данных сделки: " . (isset($deal['DATE_CREATE']) ? htmlspecialchars($deal['DATE_CREATE']) : 'не определено') . "<br>";
-echo "CLOSEDATE в данных сделки: " . (isset($deal['CLOSEDATE']) ? htmlspecialchars($deal['CLOSEDATE']) : 'не определено') . "<br>";
-echo "CLOSED в данных сделки: " . (isset($deal['CLOSED']) ? htmlspecialchars($deal['CLOSED']) : 'не определено') . "<br>";
-
-// Отладка: выводим все поля связанные с датами
-echo "Все поля с 'DATE' или 'CLOSE' в названии:<br>";
-foreach ($deal as $key => $value) {
-    if (stripos($key, 'DATE') !== false || stripos($key, 'CLOSE') !== false) {
-        echo "- {$key}: " . htmlspecialchars(is_array($value) ? json_encode($value) : $value) . "<br>";
-    }
-}
+// Выводим для отладки информацию о статусе закрытия сделки
+echo "=== Проверка статуса сделки ===<br>";
+echo "CLOSED: " . (isset($deal['CLOSED']) ? htmlspecialchars($deal['CLOSED']) : 'не определено') . "<br>";
+echo "CLOSEDATE из API: " . (isset($deal['CLOSEDATE']) ? htmlspecialchars($deal['CLOSEDATE']) : 'не определено') . "<br>";
+echo "DATE_CREATE: " . (isset($deal['DATE_CREATE']) ? htmlspecialchars($deal['DATE_CREATE']) : 'не определено') . "<br>";
+echo "==============================<br>";
 
 // Получаем название направления и стадии
 $categoryName = getDealCategoryName($categoryId);
@@ -529,6 +523,15 @@ $departmentData = $responsibleId ? getUserDepartment($responsibleId) : ['id' => 
 // Форматируем общую сумму сделки с двумя знаками после запятой
 $opportunityAmount = isset($deal['OPPORTUNITY']) ? number_format((float)$deal['OPPORTUNITY'], 2, '.', '') : null;
 
+// Определяем дату закрытия: только если сделка закрыта (CLOSED = Y)
+$closedate = null;
+if (isset($deal['CLOSED']) && $deal['CLOSED'] === 'Y') {
+    $closedate = convertToMySQLDate($deal['CLOSEDATE'] ?? null);
+    echo "Сделка закрыта (CLOSED=Y), сохраняем дату закрытия: " . ($closedate ?: 'не определено') . "<br>";
+} else {
+    echo "Сделка не закрыта (CLOSED≠Y), дата закрытия будет NULL<br>";
+}
+
 // Создаем массив с необходимыми данными
 $dealData = [
     'deal_id' => $deal['ID'], // Ключевое поле
@@ -538,7 +541,7 @@ $dealData = [
     'stage_id' => $stageId, // ID стадии
     'stage_name' => $stageName, // Название стадии
     'date_create' => convertToMySQLDate($deal['DATE_CREATE']), // Дата создания сделки
-    'closedate' => convertToMySQLDate($deal['CLOSEDATE'] ?? null), // Дата закрытия сделки
+    'closedate' => $closedate, // Дата закрытия сделки (только для закрытых сделок с CLOSED=Y)
     'responsible_id' => $responsibleId, // ID ответственного
     'responsible_name' => $responsibleName, // Имя ответственного
     'department_id' => $departmentData['id'], // ID отдела
