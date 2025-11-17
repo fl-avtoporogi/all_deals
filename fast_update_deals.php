@@ -496,7 +496,7 @@ function processDealsBatch($dealIds, $bonusCodesMap, $fieldMap, $mysqli) {
             ");
 
             $stmt->bind_param(
-                "isisssiiiddddddis",
+                "isisssiiddddddis",
                 $dealId,
                 $dealTitle,
                 $categoryId,
