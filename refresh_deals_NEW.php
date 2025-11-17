@@ -568,14 +568,26 @@ function bulkInsertDeals($mysqli, $dealsData) {
         return 0;
     }
 
-    $stmt->bind_param($types, ...$params);
+    echo "DEBUG: Подготовка bind_param для " . count($dealsData) . " записей, типы: $types\n";
+
+    if (!$stmt->bind_param($types, ...$params)) {
+        echo "Ошибка bind_param: " . $stmt->error . "\n";
+        echo "Количество параметров: " . count($params) . "\n";
+        echo "Длина строки типов: " . strlen($types) . "\n";
+        $stmt->close();
+        return 0;
+    }
+
+    echo "DEBUG: bind_param успешен, выполняем запрос...\n";
 
     if (!$stmt->execute()) {
         echo "Ошибка выполнения SQL: " . $stmt->error . "\n";
+        $stmt->close();
         return 0;
     }
 
     $affected = $stmt->affected_rows;
+    echo "DEBUG: Запрос выполнен, affected_rows = $affected\n";
     $stmt->close();
 
     return $affected;
@@ -745,11 +757,13 @@ while ($offset < $remainingDeals) {
     );
 
     // Добавляем в буфер для bulk insert
+    echo "Добавление " . count($dealsData) . " записей в буфер (текущий размер: " . count($dbBuffer) . ")\n";
     foreach ($dealsData as $dealData) {
         $dbBuffer[] = $dealData;
         $processed++;
         $successful++;
     }
+    echo "Буфер после добавления: " . count($dbBuffer) . " записей\n";
 
     // Bulk insert когда буфер заполнен
     if (count($dbBuffer) >= DB_BULK_SIZE) {
@@ -797,9 +811,13 @@ while ($offset < $remainingDeals) {
 }
 
 // Записываем остатки буфера
+echo "\nФинальная запись в БД:\n";
+echo "  Размер буфера: " . count($dbBuffer) . " записей\n";
 if (!empty($dbBuffer)) {
     $inserted = bulkInsertDeals($mysqli, $dbBuffer);
     echo "Записано в БД (финальный пакет): $inserted записей\n";
+} else {
+    echo "Буфер пуст, нечего записывать\n";
 }
 
 $mysqli->close();
