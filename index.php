@@ -44,6 +44,16 @@ function rest($method, $params = []) {
     return $response;
 }
 
+// Безопасная версия REST-запроса (не останавливает выполнение при ошибке)
+function restSafe($method, $params = []) {
+    $response = CRest::call($method, $params);
+    if (isset($response['error'])) {
+        // Возвращаем null при ошибке вместо exit
+        return null;
+    }
+    return $response;
+}
+
 // Функция нормализации кода бонуса (защита от кириллицы)
 function normalizeBonusCode($code) {
     if (empty($code)) {
@@ -138,21 +148,21 @@ function extractPropertyValue($property, $propertyName = 'свойство') {
 function getProductFromCatalog($productId) {
     echo "Запрашиваем данные товара {$productId} из каталога...<br>";
 
-    // Сначала пробуем получить товар как продукт
-    $result = rest('catalog.product.get', ['id' => $productId]);
+    // Сначала пробуем получить товар как продукт (используем restSafe для обработки ошибок)
+    $result = restSafe('catalog.product.get', ['id' => $productId]);
     if ($result && isset($result['result']['product'])) {
         echo "Товар найден как продукт<br>";
         return $result['result']['product'];
     }
 
     // Если не найден как продукт, пробуем как вариацию
-    $result = rest('catalog.product.sku.get', ['id' => $productId]);
+    $result = restSafe('catalog.product.sku.get', ['id' => $productId]);
     if ($result && isset($result['result']['sku'])) {
         echo "Товар найден как вариация (SKU)<br>";
         return $result['result']['sku'];
     }
 
-    echo "Товар не найден в каталоге<br>";
+    echo "ВНИМАНИЕ: Товар ID {$productId} не найден в каталоге (возможно удален)<br>";
     return null;
 }
 
@@ -492,9 +502,18 @@ if ($channelId) {
     echo "Канал ID: " . htmlspecialchars($channelId) . ", Название: " . htmlspecialchars($channelName ?: 'не найдено') . "<br>";
 }
 
-// Выводим для отладки информацию о дате создания
+// Выводим для отладки информацию о датах
 echo "DATE_CREATE в данных сделки: " . (isset($deal['DATE_CREATE']) ? htmlspecialchars($deal['DATE_CREATE']) : 'не определено') . "<br>";
 echo "CLOSEDATE в данных сделки: " . (isset($deal['CLOSEDATE']) ? htmlspecialchars($deal['CLOSEDATE']) : 'не определено') . "<br>";
+echo "CLOSED в данных сделки: " . (isset($deal['CLOSED']) ? htmlspecialchars($deal['CLOSED']) : 'не определено') . "<br>";
+
+// Отладка: выводим все поля связанные с датами
+echo "Все поля с 'DATE' или 'CLOSE' в названии:<br>";
+foreach ($deal as $key => $value) {
+    if (stripos($key, 'DATE') !== false || stripos($key, 'CLOSE') !== false) {
+        echo "- {$key}: " . htmlspecialchars(is_array($value) ? json_encode($value) : $value) . "<br>";
+    }
+}
 
 // Получаем название направления и стадии
 $categoryName = getDealCategoryName($categoryId);
