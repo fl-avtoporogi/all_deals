@@ -1,0 +1,13 @@
+# API ключи и конфигурационные файлы
+src/settings.php
+
+# Кэш файлы
+*.cache
+*.json.cache
+bonus_codes_cache.json
+userfields_cache.json
+refresh_progress.json
+
+# Временные файлы
+*.tmp
+*.temp
