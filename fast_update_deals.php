@@ -282,6 +282,12 @@ function getDealIds($mysqli, $options) {
         $params[] = $options['from_id'];
     }
 
+    // Для продолжения с прогресса (исключаем уже обработанные)
+    if (!empty($options['from_id_exclusive'])) {
+        $where[] = "deal_id < ?";
+        $params[] = $options['from_id_exclusive'];
+    }
+
     if (!empty($options['to_id'])) {
         $where[] = "deal_id <= ?";
         $params[] = $options['to_id'];
@@ -576,6 +582,39 @@ function main($argv) {
     $mysqli->set_charset("utf8mb4");
     echo "✓ Подключение к БД установлено\n";
 
+    // Проверка существующего прогресса
+    $progress = loadProgress();
+    $continueFromProgress = false;
+    $lastProcessedId = null;
+
+    if ($progress && !isset($options['reset'])) {
+        echo "\n";
+        echo "════════════════════════════════════════════════════════════════\n";
+        echo "⚠️  НАЙДЕН НЕЗАВЕРШЕННЫЙ ПРОЦЕСС\n";
+        echo "════════════════════════════════════════════════════════════════\n";
+        echo "Обработано:  {$progress['processed']} из {$progress['total']} сделок\n";
+        echo "Успешно:     {$progress['successful']}\n";
+        echo "Ошибок:      {$progress['errors']}\n";
+        echo "Последний ID: {$progress['last_deal_id']}\n";
+        echo "Время:       {$progress['timestamp']}\n";
+        echo "════════════════════════════════════════════════════════════════\n";
+        echo "\nПродолжить с последнего места? (y/n): ";
+
+        $handle = fopen("php://stdin", "r");
+        $line = fgets($handle);
+        fclose($handle);
+
+        if (trim(strtolower($line)) === 'y' || trim(strtolower($line)) === 'yes') {
+            $continueFromProgress = true;
+            $lastProcessedId = $progress['last_deal_id'];
+            echo "✓ Продолжаем с ID {$lastProcessedId}\n\n";
+        } else {
+            echo "✓ Начинаем сначала\n";
+            resetProgress();
+            echo "\n";
+        }
+    }
+
     // Загрузка справочников
     echo "✓ Загрузка справочников...\n";
     $bonusCodesMap = getBonusCodesMap($mysqli);
@@ -586,16 +625,28 @@ function main($argv) {
 
     // Получение списка сделок
     echo "\n✓ Получение списка сделок для обработки...\n";
-    $dealIds = getDealIds($mysqli, $options);
-    $totalDeals = count($dealIds);
 
-    if ($totalDeals === 0) {
+    // Если продолжаем с прогресса, добавляем фильтр
+    if ($continueFromProgress && $lastProcessedId) {
+        $options['from_id_exclusive'] = $lastProcessedId;
+    }
+
+    $dealIds = getDealIds($mysqli, $options);
+    $remainingDeals = count($dealIds);
+
+    if ($remainingDeals === 0) {
         echo "✗ Нет сделок для обработки\n";
         $mysqli->close();
         return;
     }
 
-    echo "  → Найдено сделок: {$totalDeals}\n";
+    // Общее количество для расчета процента
+    $totalDealsOriginal = $continueFromProgress && $progress ? $progress['total'] : $remainingDeals;
+
+    echo "  → Найдено сделок: {$remainingDeals}\n";
+    if ($continueFromProgress) {
+        echo "  → Всего в задаче: {$totalDealsOriginal}\n";
+    }
 
     // Вывод фильтров
     if (!empty($options)) {
@@ -603,7 +654,7 @@ function main($argv) {
     }
 
     // Оценка времени
-    $estimatedMinutes = ceil($totalDeals / (DEALS_PER_BATCH * 2)); // 2 запроса в секунду
+    $estimatedMinutes = ceil($remainingDeals / (DEALS_PER_BATCH * 2)); // 2 запроса в секунду
     echo "  → Примерное время: " . gmdate("H:i:s", $estimatedMinutes * 60) . "\n";
 
     echo "\n";
@@ -614,9 +665,19 @@ function main($argv) {
     // Разбиваем на пакеты
     $chunks = array_chunk($dealIds, DEALS_PER_BATCH);
     $totalChunks = count($chunks);
-    $processed = 0;
-    $successful = 0;
-    $errors = 0;
+
+    // Восстанавливаем счетчики если продолжаем с прогресса
+    if ($continueFromProgress && $progress) {
+        $processed = $progress['processed'];
+        $successful = $progress['successful'];
+        $errors = $progress['errors'];
+        echo "✓ Восстановлены счетчики: обработано {$processed}, успешно {$successful}, ошибок {$errors}\n\n";
+    } else {
+        $processed = 0;
+        $successful = 0;
+        $errors = 0;
+    }
+
     $startTime = time();
 
     foreach ($chunks as $chunkIndex => $chunk) {
@@ -631,14 +692,14 @@ function main($argv) {
         $successful += $stats['success'];
         $errors += $stats['errors'];
 
-        $percent = round(($processed / $totalDeals) * 100, 1);
+        $percent = round(($processed / $totalDealsOriginal) * 100, 1);
         $elapsed = time() - $startTime;
         $rate = $elapsed > 0 ? round($processed / $elapsed * 60, 1) : 0;
-        $eta = $rate > 0 ? round(($totalDeals - $processed) / ($rate / 60)) : 0;
+        $eta = $rate > 0 ? round(($totalDealsOriginal - $processed) / ($rate / 60)) : 0;
 
         echo sprintf(
             "  ✓ Обработано: %d/%d (%.1f%%) | OK:%d ERR:%d | %.1f сделок/мин | ETA: %s | Время пакета: %.1f сек\n\n",
-            $processed, $totalDeals, $percent, $successful, $errors, $rate,
+            $processed, $totalDealsOriginal, $percent, $successful, $errors, $rate,
             gmdate("H:i:s", $eta), $chunkTime
         );
 
@@ -650,7 +711,7 @@ function main($argv) {
                 'processed' => $processed,
                 'successful' => $successful,
                 'errors' => $errors,
-                'total' => $totalDeals,
+                'total' => $totalDealsOriginal,
                 'timestamp' => date('Y-m-d H:i:s')
             ]);
         }
@@ -676,9 +737,12 @@ function main($argv) {
     echo "Скорость:          {$avgRate} сделок/мин\n";
     echo "════════════════════════════════════════════════════════════════\n";
 
-    // Удаляем файл прогресса
-    if (file_exists(PROGRESS_FILE)) {
+    // Удаляем файл прогресса только если все обработано
+    if ($processed >= $totalDealsOriginal && file_exists(PROGRESS_FILE)) {
         unlink(PROGRESS_FILE);
+        echo "\n✓ Файл прогресса удален (задача выполнена полностью)\n";
+    } elseif (file_exists(PROGRESS_FILE)) {
+        echo "\n⚠️  Файл прогресса сохранен (осталось обработать)\n";
     }
 }
 
