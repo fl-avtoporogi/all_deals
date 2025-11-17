@@ -622,7 +622,7 @@ echo "Выражение успешно подготовлено.<br>";
 
 // Привязываем параметры
 $bind = $stmt->bind_param(
-    "isissssississdddddddis", // i - integer, s - string, d - double (20 спецификаторов)
+    "isissssississddddddis", // i - integer, s - string, d - double (20 спецификаторов)
     $dealData['deal_id'],                // 1. i
     $dealData['title'],                  // 2. s
     $dealData['funnel_id'],              // 3. i
