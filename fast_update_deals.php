@@ -455,6 +455,19 @@ function processDealsBatch($dealIds, $bonusCodesMap, $fieldMap, $mysqli) {
 
             $opportunityAmount = isset($deal['OPPORTUNITY']) ? round((float)$deal['OPPORTUNITY'], 2) : null;
 
+            // Подготовка переменных для bind_param (требуется передача по ссылке)
+            $dealId = $deal['ID'];
+            $dealTitle = $deal['TITLE'];
+            $dealStageId = $deal['STAGE_ID'];
+            $dealDateCreate = convertToMySQLDate($deal['DATE_CREATE']);
+            $dealResponsibleId = $deal['ASSIGNED_BY_ID'];
+            $departmentId = null; // department_id - нужен отдельный запрос
+            $quantity = $calculations['total_quantity'];
+            $turnoverA = $calculations['turnover_category_a'];
+            $turnoverB = $calculations['turnover_category_b'];
+            $bonusA = $calculations['bonus_category_a'];
+            $bonusB = $calculations['bonus_category_b'];
+
             // Сохраняем в БД
             $stmt = $mysqli->prepare("
                 INSERT INTO all_deals (
@@ -484,20 +497,20 @@ function processDealsBatch($dealIds, $bonusCodesMap, $fieldMap, $mysqli) {
 
             $stmt->bind_param(
                 "isisssiiiddddddis",
-                $deal['ID'],
-                $deal['TITLE'],
+                $dealId,
+                $dealTitle,
                 $categoryId,
-                $deal['STAGE_ID'],
-                convertToMySQLDate($deal['DATE_CREATE']),
+                $dealStageId,
+                $dealDateCreate,
                 $closedate,
-                $deal['ASSIGNED_BY_ID'],
-                null, // department_id - нужен отдельный запрос
+                $dealResponsibleId,
+                $departmentId,
                 $opportunityAmount,
-                $calculations['total_quantity'],
-                $calculations['turnover_category_a'],
-                $calculations['turnover_category_b'],
-                $calculations['bonus_category_a'],
-                $calculations['bonus_category_b'],
+                $quantity,
+                $turnoverA,
+                $turnoverB,
+                $bonusA,
+                $bonusB,
                 $channelId,
                 $channelName
             );
@@ -631,8 +644,9 @@ function main($argv) {
 
         // Сохраняем прогресс каждые 5 пакетов
         if ($chunkNum % 5 === 0) {
+            $lastDealId = end($chunk); // end() требует переменную
             saveProgress([
-                'last_deal_id' => end($chunk),
+                'last_deal_id' => $lastDealId,
                 'processed' => $processed,
                 'successful' => $successful,
                 'errors' => $errors,
