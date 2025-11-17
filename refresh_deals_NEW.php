@@ -316,12 +316,21 @@ function processDealsBatch($dealIds, $bonusCodes, $stages, $categories, $users, 
     // Обрабатываем результаты
     $processedDeals = [];
     $productIdsToFetch = [];
+    $skippedCount = 0;
 
     foreach ($dealIds as $dealId) {
         $dealKey = "deal_$dealId";
         $productsKey = "products_$dealId";
 
-        if (!isset($batchResults[$dealKey]) || !isset($batchResults[$productsKey])) {
+        if (!isset($batchResults[$dealKey])) {
+            echo "  Сделка $dealId: отсутствует в результатах (возможно удалена)\n";
+            $skippedCount++;
+            continue;
+        }
+
+        if (!isset($batchResults[$productsKey])) {
+            echo "  Сделка $dealId: нет товаров в результатах\n";
+            $skippedCount++;
             continue;
         }
 
@@ -409,6 +418,11 @@ function processDealsBatch($dealIds, $bonusCodes, $stages, $categories, $users, 
             'channel_name' => isset($userFields['UF_CRM_1698142542036'][$channelId]) ? $userFields['UF_CRM_1698142542036'][$channelId] : null
         ];
     }
+
+    echo "Статистика пакета:\n";
+    echo "  Запрошено сделок: " . count($dealIds) . "\n";
+    echo "  Пропущено (не найдено): $skippedCount\n";
+    echo "  Успешно обработано: " . count($results) . "\n";
 
     return $results;
 }
@@ -746,16 +760,17 @@ while ($offset < $remainingDeals) {
 
     // Статистика
     $batchTime = microtime(true) - $batchStartTime;
-    $batchRate = count($dealIds) / $batchTime * 60;
+    $actualProcessed = count($dealsData);
+    $batchRate = $actualProcessed > 0 ? $actualProcessed / $batchTime * 60 : 0;
     $elapsed = time() - $startTime;
     $rate = $elapsed > 0 ? round($processed / $elapsed * 60, 1) : 0;
     $eta = $rate > 0 ? round(($remainingDeals - $processed) / ($rate / 60)) : 0;
 
     printf(
-        "[%d/%d] %.1f%% | Пакет: %d сделок за %.1fs (%.0f/мин) | Всего: %.1f/мин | ETA: %s\n",
+        "[%d/%d] %.1f%% | Запрошено: %d, Обработано: %d за %.1fs (%.0f/мин) | Всего: %.1f/мин | ETA: %s\n",
         $processed, $remainingDeals,
         ($processed / $remainingDeals) * 100,
-        count($dealIds), $batchTime, $batchRate,
+        count($dealIds), $actualProcessed, $batchTime, $batchRate,
         $rate,
         gmdate("H:i:s", $eta)
     );
