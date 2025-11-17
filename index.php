@@ -1,5 +1,5 @@
 <?php
-echo "=== VERSION: 2025-11-17 CLOSEDATE-FIX-v5 ===<br>";
+echo "=== VERSION: 2025-11-17 CLOSEDATE-FIX-v6 ===<br>";
 
 // БД ДЛЯ ВСЕХ СДЕЛОК С РАСЧЕТОМ БОНУСОВ!!!
 //https://avtoporogi.bitrix24.ru/company/personal/user/9/tasks/task/view/24611/ - задача
