@@ -38,7 +38,7 @@ if (ob_get_level()) {
 }
 ob_implicit_flush(true);
 
-require_once '../db_connect.php';
+require_once __DIR__ . '/../db_connect.php';
 
 // Константы
 $fastMode = isset($argv[1]) && $argv[1] == 'fast';
