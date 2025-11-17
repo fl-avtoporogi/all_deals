@@ -46,12 +46,18 @@ function rest($method, $params = []) {
 
 // Безопасная версия REST-запроса (не останавливает выполнение при ошибке)
 function restSafe($method, $params = []) {
-    $response = CRest::call($method, $params);
-    if (isset($response['error'])) {
-        // Возвращаем null при ошибке вместо exit
+    try {
+        $response = CRest::call($method, $params);
+        if (isset($response['error'])) {
+            // Возвращаем null при ошибке вместо exit
+            return null;
+        }
+        return $response;
+    } catch (Exception $e) {
+        // Перехватываем исключение от CRest и возвращаем null
+        echo "ОТЛОВ ОШИБКИ API: " . htmlspecialchars($e->getMessage()) . "<br>";
         return null;
     }
-    return $response;
 }
 
 // Функция нормализации кода бонуса (защита от кириллицы)
@@ -616,7 +622,7 @@ echo "Выражение успешно подготовлено.<br>";
 
 // Привязываем параметры
 $bind = $stmt->bind_param(
-    "isissssississdddddddis", // i - integer, s - string, d - double (20 спецификаторов)
+    "isissssississddddddis", // i - integer, s - string, d - double (20 спецификаторов)
     $dealData['deal_id'],                // 1. i
     $dealData['title'],                  // 2. s
     $dealData['funnel_id'],              // 3. i
