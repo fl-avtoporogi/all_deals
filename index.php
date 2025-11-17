@@ -1,5 +1,5 @@
 <?php
-echo "=== VERSION: 2025-11-17 CLOSEDATE-FIX-v6 ===<br>";
+echo "=== VERSION: 2025-11-17 CLOSEDATE-FIX-v7 ===<br>";
 
 // БД ДЛЯ ВСЕХ СДЕЛОК С РАСЧЕТОМ БОНУСОВ!!!
 //https://avtoporogi.bitrix24.ru/company/personal/user/9/tasks/task/view/24611/ - задача
@@ -528,8 +528,8 @@ $responsibleName = $responsibleId ? getUserName($responsibleId) : null;
 // Получаем информацию об отделе ответственного
 $departmentData = $responsibleId ? getUserDepartment($responsibleId) : ['id' => null, 'name' => null];
 
-// Форматируем общую сумму сделки с двумя знаками после запятой
-$opportunityAmount = isset($deal['OPPORTUNITY']) ? number_format((float)$deal['OPPORTUNITY'], 2, '.', '') : null;
+// Округляем общую сумму сделки с двумя знаками после запятой
+$opportunityAmount = isset($deal['OPPORTUNITY']) ? round((float)$deal['OPPORTUNITY'], 2) : null;
 
 // Определяем дату закрытия: только если сделка закрыта (CLOSED = Y)
 $closedate = null;
