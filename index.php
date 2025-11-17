@@ -494,6 +494,7 @@ if ($channelId) {
 
 // Выводим для отладки информацию о дате создания
 echo "DATE_CREATE в данных сделки: " . (isset($deal['DATE_CREATE']) ? htmlspecialchars($deal['DATE_CREATE']) : 'не определено') . "<br>";
+echo "CLOSEDATE в данных сделки: " . (isset($deal['CLOSEDATE']) ? htmlspecialchars($deal['CLOSEDATE']) : 'не определено') . "<br>";
 
 // Получаем название направления и стадии
 $categoryName = getDealCategoryName($categoryId);
@@ -518,6 +519,7 @@ $dealData = [
     'stage_id' => $stageId, // ID стадии
     'stage_name' => $stageName, // Название стадии
     'date_create' => convertToMySQLDate($deal['DATE_CREATE']), // Дата создания сделки
+    'closedate' => convertToMySQLDate($deal['CLOSEDATE'] ?? null), // Дата закрытия сделки
     'responsible_id' => $responsibleId, // ID ответственного
     'responsible_name' => $responsibleName, // Имя ответственного
     'department_id' => $departmentData['id'], // ID отдела
@@ -542,17 +544,18 @@ echo "Подготовлено выражение для вставки.<br>";
 
 $stmt = $mysqli->prepare("INSERT INTO all_deals (
     deal_id,
-    title, 
-    funnel_id, 
-    funnel_name, 
-    stage_id, 
-    stage_name, 
-    date_create, 
-    responsible_id, 
-    responsible_name, 
-    department_id, 
-    department_name, 
-    opportunity, 
+    title,
+    funnel_id,
+    funnel_name,
+    stage_id,
+    stage_name,
+    date_create,
+    closedate,
+    responsible_id,
+    responsible_name,
+    department_id,
+    department_name,
+    opportunity,
     quantity,
     turnover_category_a,
     turnover_category_b,
@@ -560,7 +563,7 @@ $stmt = $mysqli->prepare("INSERT INTO all_deals (
     bonus_category_b,
     channel_id,
     channel_name
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON DUPLICATE KEY UPDATE
     title = VALUES(title),
     funnel_id = VALUES(funnel_id),
@@ -568,6 +571,7 @@ ON DUPLICATE KEY UPDATE
     stage_id = VALUES(stage_id),
     stage_name = VALUES(stage_name),
     date_create = VALUES(date_create),
+    closedate = VALUES(closedate),
     responsible_id = VALUES(responsible_id),
     responsible_name = VALUES(responsible_name),
     department_id = VALUES(department_id),
@@ -590,7 +594,7 @@ echo "Выражение успешно подготовлено.<br>";
 
 // Привязываем параметры
 $bind = $stmt->bind_param(
-    "isisssissisddddddis", // i - integer, s - string, d - double (19 спецификаторов)
+    "isissssississdddddddis", // i - integer, s - string, d - double (20 спецификаторов)
     $dealData['deal_id'],                // 1. i
     $dealData['title'],                  // 2. s
     $dealData['funnel_id'],              // 3. i
@@ -598,18 +602,19 @@ $bind = $stmt->bind_param(
     $dealData['stage_id'],               // 5. s
     $dealData['stage_name'],             // 6. s
     $dealData['date_create'],            // 7. s
-    $dealData['responsible_id'],         // 8. i
-    $dealData['responsible_name'],       // 9. s
-    $dealData['department_id'],          // 10. i
-    $dealData['department_name'],        // 11. s
-    $dealData['opportunity'],            // 12. d
-    $dealData['quantity'],               // 13. d
-    $dealData['turnover_category_a'],    // 14. d
-    $dealData['turnover_category_b'],    // 15. d
-    $dealData['bonus_category_a'],       // 16. d
-    $dealData['bonus_category_b'],       // 17. d
-    $dealData['channel_id'],             // 18. i
-    $dealData['channel_name']            // 19. s
+    $dealData['closedate'],              // 8. s
+    $dealData['responsible_id'],         // 9. i
+    $dealData['responsible_name'],       // 10. s
+    $dealData['department_id'],          // 11. i
+    $dealData['department_name'],        // 12. s
+    $dealData['opportunity'],            // 13. d
+    $dealData['quantity'],               // 14. d
+    $dealData['turnover_category_a'],    // 15. d
+    $dealData['turnover_category_b'],    // 16. d
+    $dealData['bonus_category_a'],       // 17. d
+    $dealData['bonus_category_b'],       // 18. d
+    $dealData['channel_id'],             // 19. i
+    $dealData['channel_name']            // 20. s
 );
 
 if (!$bind) {
