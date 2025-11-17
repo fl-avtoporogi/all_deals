@@ -588,11 +588,15 @@ function main($argv) {
     $lastProcessedId = null;
 
     if ($progress && !isset($options['reset'])) {
+        $savedChunkNum = $progress['current_chunk'] ?? 0;
+        $totalChunksEstimate = ceil($progress['total'] / DEALS_PER_BATCH);
+
         echo "\n";
         echo "════════════════════════════════════════════════════════════════\n";
         echo "⚠️  НАЙДЕН НЕЗАВЕРШЕННЫЙ ПРОЦЕСС\n";
         echo "════════════════════════════════════════════════════════════════\n";
         echo "Обработано:  {$progress['processed']} из {$progress['total']} сделок\n";
+        echo "Пакетов:     {$savedChunkNum} из {$totalChunksEstimate}\n";
         echo "Успешно:     {$progress['successful']}\n";
         echo "Ошибок:      {$progress['errors']}\n";
         echo "Последний ID: {$progress['last_deal_id']}\n";
@@ -664,25 +668,31 @@ function main($argv) {
 
     // Разбиваем на пакеты
     $chunks = array_chunk($dealIds, DEALS_PER_BATCH);
-    $totalChunks = count($chunks);
+    $remainingChunks = count($chunks);
+
+    // Рассчитываем общее количество пакетов от всего объема
+    $totalChunks = ceil($totalDealsOriginal / DEALS_PER_BATCH);
 
     // Восстанавливаем счетчики если продолжаем с прогресса
     if ($continueFromProgress && $progress) {
         $processed = $progress['processed'];
         $successful = $progress['successful'];
         $errors = $progress['errors'];
-        echo "✓ Восстановлены счетчики: обработано {$processed}, успешно {$successful}, ошибок {$errors}\n\n";
+        $currentChunkNum = $progress['current_chunk'] ?? 0; // Восстанавливаем номер пакета
+        echo "✓ Восстановлены счетчики: обработано {$processed}, успешно {$successful}, ошибок {$errors}\n";
+        echo "✓ Продолжаем с пакета " . ($currentChunkNum + 1) . " из {$totalChunks}\n\n";
     } else {
         $processed = 0;
         $successful = 0;
         $errors = 0;
+        $currentChunkNum = 0;
     }
 
     $startTime = time();
 
     foreach ($chunks as $chunkIndex => $chunk) {
-        $chunkNum = $chunkIndex + 1;
-        echo "Пакет {$chunkNum}/{$totalChunks} (" . count($chunk) . " сделок):\n";
+        $currentChunkNum++; // Увеличиваем счетчик пакетов
+        echo "Пакет {$currentChunkNum}/{$totalChunks} (" . count($chunk) . " сделок):\n";
 
         $chunkStartTime = microtime(true);
         $stats = processDealsBatch($chunk, $bonusCodesMap, $fieldMap, $mysqli);
@@ -704,7 +714,7 @@ function main($argv) {
         );
 
         // Сохраняем прогресс каждые 5 пакетов
-        if ($chunkNum % 5 === 0) {
+        if ($currentChunkNum % 5 === 0) {
             $lastDealId = end($chunk); // end() требует переменную
             saveProgress([
                 'last_deal_id' => $lastDealId,
@@ -712,6 +722,7 @@ function main($argv) {
                 'successful' => $successful,
                 'errors' => $errors,
                 'total' => $totalDealsOriginal,
+                'current_chunk' => $currentChunkNum, // Сохраняем номер пакета
                 'timestamp' => date('Y-m-d H:i:s')
             ]);
         }
