@@ -22,6 +22,9 @@
  * php fast_update_deals.php --funnel=5         - только воронка 5
  * php fast_update_deals.php --reset            - сброс прогресса
  *
+ * АВТОМАТИЧЕСКОЕ ВОЗОБНОВЛЕНИЕ:
+ * При повторном запуске скрипт автоматически продолжит с последней позиции
+ *
  * @version 1.0
  * @author 4ias.ru
  */
@@ -602,21 +605,11 @@ function main($argv) {
         echo "Последний ID: {$progress['last_deal_id']}\n";
         echo "Время:       {$progress['timestamp']}\n";
         echo "════════════════════════════════════════════════════════════════\n";
-        echo "\nПродолжить с последнего места? (y/n): ";
 
-        $handle = fopen("php://stdin", "r");
-        $line = fgets($handle);
-        fclose($handle);
-
-        if (trim(strtolower($line)) === 'y' || trim(strtolower($line)) === 'yes') {
-            $continueFromProgress = true;
-            $lastProcessedId = $progress['last_deal_id'];
-            echo "✓ Продолжаем с ID {$lastProcessedId}\n\n";
-        } else {
-            echo "✓ Начинаем сначала\n";
-            resetProgress();
-            echo "\n";
-        }
+        // Автоматическое возобновление с последней позиции
+        $continueFromProgress = true;
+        $lastProcessedId = $progress['last_deal_id'];
+        echo "\n✓ Автоматическое продолжение с ID {$lastProcessedId}\n\n";
     }
 
     // Загрузка справочников
