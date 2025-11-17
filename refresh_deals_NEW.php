@@ -587,10 +587,34 @@ function bulkInsertDeals($mysqli, $dealsData) {
     }
 
     $affected = $stmt->affected_rows;
-    echo "DEBUG: Запрос выполнен, affected_rows = $affected\n";
+
+    // MySQL affected_rows для ON DUPLICATE KEY UPDATE:
+    // 0 = запись существует, данные не изменились
+    // 1 = новая запись (INSERT)
+    // 2 = обновление существующей записи (UPDATE с изменениями)
+
+    $inserted = 0;
+    $updated = 0;
+    $unchanged = 0;
+
+    if ($affected == 0) {
+        // Все записи уже существуют и данные не изменились
+        $unchanged = count($dealsData);
+        echo "DEBUG: Все записи уже существуют и актуальны (unchanged = $unchanged)\n";
+    } else {
+        // Приблизительный подсчет (может быть неточным)
+        $inserted = floor($affected / 2); // affected=2 за UPDATE
+        $updated = $affected - $inserted;
+        if ($inserted + $updated < count($dealsData)) {
+            $unchanged = count($dealsData) - ($inserted + $updated);
+        }
+        echo "DEBUG: inserted ≈ $inserted, updated ≈ $updated, unchanged ≈ $unchanged\n";
+    }
+
     $stmt->close();
 
-    return $affected;
+    // Возвращаем количество обработанных записей (не affected_rows)
+    return count($dealsData);
 }
 
 // ==================== РАБОТА С ПРОГРЕССОМ ====================
@@ -609,6 +633,8 @@ echo "=== ОПТИМИЗИРОВАННОЕ ОБНОВЛЕНИЕ СДЕЛОК ===
 
 // Обработка аргументов
 $testLimit = null;
+$freshStart = false;
+
 if (isset($argv[1])) {
     if ($argv[1] == 'reset') {
         if (file_exists(PROGRESS_FILE)) {
@@ -620,6 +646,14 @@ if (isset($argv[1])) {
     } elseif ($argv[1] == 'limit' && isset($argv[2])) {
         $testLimit = intval($argv[2]);
         echo "ТЕСТОВЫЙ РЕЖИМ: Обработка только $testLimit сделок\n\n";
+    } elseif ($argv[1] == 'fresh') {
+        $freshStart = true;
+        if (isset($argv[2])) {
+            $testLimit = intval($argv[2]);
+            echo "ТЕСТОВЫЙ РЕЖИМ: Обработка $testLimit сделок с начала (минимальный ID)\n\n";
+        } else {
+            echo "РЕЖИМ FRESH: Обработка с начала (минимальный ID), игнорируя прогресс\n\n";
+        }
     }
 }
 
@@ -649,13 +683,23 @@ $userFields = loadUserFields();
 echo "\nВсе справочники загружены!\n\n";
 
 // Определяем диапазон обработки
-$progress = loadProgress();
+$progress = !$freshStart ? loadProgress() : null;
 $startId = 0;
+$isAscending = false; // Направление обработки
 
 $minResult = $mysqli->query("SELECT MIN(deal_id) as min_id FROM all_deals");
 $minId = $minResult->fetch_assoc()['min_id'] ?: 1;
 
-if ($progress) {
+$maxResult = $mysqli->query("SELECT MAX(deal_id) as max_id FROM all_deals");
+$maxId = $maxResult->fetch_assoc()['max_id'] ?: 0;
+
+if ($freshStart) {
+    // Режим fresh - начинаем с минимального ID (по возрастанию)
+    $startId = $minId;
+    $isAscending = true;
+    echo "Начало с ID: $startId (минимальный, fresh mode)\n";
+} elseif ($progress) {
+    // Продолжаем с сохраненной позиции (по убыванию)
     $startId = $progress['last_processed_id'] - 1;
     if ($startId < $minId) {
         echo "Все сделки уже обработаны!\n";
@@ -667,17 +711,18 @@ if ($progress) {
     }
     echo "Продолжение с ID: $startId\n";
 } else {
-    $result = $mysqli->query("SELECT MAX(deal_id) as max_id FROM all_deals");
-    $maxId = $result->fetch_assoc()['max_id'];
-    $startId = $maxId ?: 0;
+    // Начинаем с максимального ID (по убыванию)
+    $startId = $maxId;
     echo "Начало с ID: $startId (максимальный)\n";
 }
 
 // Подсчет сделок
-$query = "SELECT COUNT(*) as total FROM all_deals WHERE deal_id <= $startId";
-if ($testLimit) {
-    $query .= " LIMIT $testLimit";
+if ($isAscending) {
+    $query = "SELECT COUNT(*) as total FROM all_deals WHERE deal_id >= $startId";
+} else {
+    $query = "SELECT COUNT(*) as total FROM all_deals WHERE deal_id <= $startId";
 }
+
 $result = $mysqli->query($query);
 $remainingDeals = $result->fetch_assoc()['total'];
 
@@ -728,12 +773,23 @@ while ($offset < $remainingDeals) {
     }
 
     // Получаем пакет ID сделок
-    $result = $mysqli->query(
-        "SELECT deal_id FROM all_deals
-         WHERE deal_id <= $startId
-         ORDER BY deal_id DESC
-         LIMIT $offset, $limit"
-    );
+    if ($isAscending) {
+        // Fresh mode - от минимального к максимальному
+        $result = $mysqli->query(
+            "SELECT deal_id FROM all_deals
+             WHERE deal_id >= $startId
+             ORDER BY deal_id ASC
+             LIMIT $offset, $limit"
+        );
+    } else {
+        // Обычный режим - от максимального к минимальному
+        $result = $mysqli->query(
+            "SELECT deal_id FROM all_deals
+             WHERE deal_id <= $startId
+             ORDER BY deal_id DESC
+             LIMIT $offset, $limit"
+        );
+    }
 
     if (!$result) break;
 
