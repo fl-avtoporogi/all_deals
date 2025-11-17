@@ -82,19 +82,43 @@ function clearCache() {
 function batchCall($calls) {
     if (empty($calls)) return [];
 
+    // Преобразуем формат для CRest::callBatch
+    // Из ['key' => ['method', ['params']]]
+    // В ['key' => ['method' => 'method', 'params' => ['params']]]
     $batch = [];
     foreach ($calls as $key => $call) {
-        $batch[$key] = $call;
+        if (is_array($call) && count($call) >= 2) {
+            $batch[$key] = [
+                'method' => $call[0],
+                'params' => $call[1] ?? []
+            ];
+        }
     }
 
+    echo "DEBUG: Отправка batch-запроса с " . count($batch) . " командами\n";
     $result = CRest::callBatch($batch);
 
+    // Детальное логирование для отладки
     if (isset($result['error'])) {
-        echo "Ошибка batch-запроса: " . $result['error_description'] . "\n";
+        echo "ОШИБКА batch-запроса:\n";
+        echo "  Код: " . ($result['error'] ?? 'не указан') . "\n";
+        echo "  Описание: " . ($result['error_description'] ?? 'не указано') . "\n";
         return [];
     }
 
-    return $result['result']['result'] ?? [];
+    if (!isset($result['result'])) {
+        echo "ОШИБКА: Нет поля 'result' в ответе\n";
+        return [];
+    }
+
+    if (!isset($result['result']['result'])) {
+        echo "ОШИБКА: Нет поля 'result.result' в ответе\n";
+        echo "Структура result: " . json_encode(array_keys($result['result']), JSON_UNESCAPED_UNICODE) . "\n";
+        return [];
+    }
+
+    echo "DEBUG: Batch-запрос успешен, получено результатов: " . count($result['result']['result']) . "\n";
+    return $result['result']['result'];
 }
 
 // ==================== ЗАГРУЗКА СПРАВОЧНИКОВ ====================
