@@ -1,4 +1,6 @@
 <?php
+echo "=== VERSION: 2025-11-17 CLOSEDATE-FIX-v5 ===<br>";
+
 // БД ДЛЯ ВСЕХ СДЕЛОК С РАСЧЕТОМ БОНУСОВ!!!
 //https://avtoporogi.bitrix24.ru/company/personal/user/9/tasks/task/view/24611/ - задача
 //https://avtoporogi.bitrix24.ru/crm/configs/bp/CRM_DEAL/edit/37/#A66894_66463_78347_39643 - запуск из БП
