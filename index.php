@@ -1,5 +1,5 @@
 <?php
-echo "=== VERSION: 2025-11-17 CLOSEDATE-FIX-v5 ===<br>";
+echo "=== VERSION: 2025-11-17 CLOSEDATE-FIX-v6 ===<br>";
 
 // БД ДЛЯ ВСЕХ СДЕЛОК С РАСЧЕТОМ БОНУСОВ!!!
 //https://avtoporogi.bitrix24.ru/company/personal/user/9/tasks/task/view/24611/ - задача
@@ -624,7 +624,7 @@ echo "Выражение успешно подготовлено.<br>";
 
 // Привязываем параметры
 $bind = $stmt->bind_param(
-    "isissssississddddddis", // i - integer, s - string, d - double (20 спецификаторов)
+    "isisssssissdddddis", // i - integer, s - string, d - double (20 параметров)
     $dealData['deal_id'],                // 1. i
     $dealData['title'],                  // 2. s
     $dealData['funnel_id'],              // 3. i
