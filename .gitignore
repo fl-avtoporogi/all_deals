@@ -12,3 +12,7 @@ fast_update_progress.json
 # Временные файлы
 *.tmp
 *.temp
+
+# Claude AI assistant files
+.claude/
+nul
