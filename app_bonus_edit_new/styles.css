@@ -1,0 +1,293 @@
+/**
+ * Стили для приложения редактирования бонусов
+ */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Заголовки */
+h2 {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.card-title {
+    color: #34495e;
+    font-weight: 500;
+}
+
+/* Карточки */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Таблица */
+.table-responsive {
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom-width: 2px;
+}
+
+.table tbody tr {
+    transition: background-color 0.15s ease-in-out;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Input для бонусов */
+.bonus-input {
+    max-width: 150px;
+    font-weight: 500;
+}
+
+.bonus-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+}
+
+/* Кнопки */
+.btn {
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-success:disabled {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* Иконки */
+.bi {
+    vertical-align: -0.125em;
+}
+
+/* Поле поиска */
+#searchInput {
+    border-radius: 0.375rem;
+    border: 1px solid #ced4da;
+}
+
+#searchInput:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Секция импорта */
+.input-group .form-control {
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.input-group .btn {
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+
+/* Алерты */
+.alert {
+    border-radius: 0.375rem;
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.alert-success {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #664d03;
+}
+
+/* Индикатор загрузки */
+#loadingSpinner {
+    color: #6c757d;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Результат импорта */
+#importResult .alert {
+    margin-bottom: 0;
+}
+
+#importResult .alert ul {
+    margin-top: 0.5rem;
+    padding-left: 1.25rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#importResult .alert ul li {
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .table {
+        font-size: 0.875rem;
+    }
+
+    .bonus-input {
+        max-width: 100px;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Скроллбар для списка ошибок */
+#importResult .alert ul::-webkit-scrollbar {
+    width: 8px;
+}
+
+#importResult .alert ul::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+#importResult .alert ul::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+#importResult .alert ul::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* Подсветка измененных полей */
+.bonus-input.changed {
+    border-color: #ffc107;
+    background-color: #fff3cd;
+}
+
+/* Дополнительные улучшения */
+.card-text.small {
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Улучшение внешнего вида disabled кнопок */
+.btn:disabled {
+    opacity: 0.65;
+}
+
+/* Стиль для успешного импорта */
+.alert-success strong {
+    color: #0f5132;
+}
+
+.alert-warning strong {
+    color: #664d03;
+}
+
+.alert-danger strong {
+    color: #842029;
+}
