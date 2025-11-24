@@ -21,7 +21,8 @@ class BonusRepository
      */
     public function findAll()
     {
-        $query = "SELECT code, bonus_amount FROM bonus_codes ORDER BY code";
+        // Получаем все коды без сортировки
+        $query = "SELECT code, bonus_amount FROM bonus_codes";
         $result = $this->db->query($query);
 
         if (!$result) {
@@ -35,6 +36,11 @@ class BonusRepository
                 'bonus' => floatval($row['bonus_amount'])
             ];
         }
+
+        // Применяем natural sort для правильной сортировки (A1, A2, ..., A9, A10, A11)
+        usort($codes, function($a, $b) {
+            return strnatcmp($a['code'], $b['code']);
+        });
 
         return $codes;
     }
