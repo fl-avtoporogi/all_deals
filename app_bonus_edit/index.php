@@ -116,22 +116,64 @@ $apiBaseUrl = 'api.php?member_id=' . urlencode($memberId);
                             <p class="mt-2 text-muted">Загрузка данных...</p>
                         </div>
 
-                        <!-- Таблица -->
+                        <!-- Таблицы (3 колонки) -->
                         <div id="tableContainer" style="display: none;">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th style="width: 30%;">Код бонуса</th>
-                                            <th style="width: 30%;">Бонус (₽)</th>
-                                            <th style="width: 40%;">Категория</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="bonusTableBody">
-                                        <!-- Заполняется через JavaScript -->
-                                    </tbody>
-                                </table>
+                            <div class="row">
+                                <!-- Колонка 1 -->
+                                <div class="col-md-4">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover table-sm">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Код</th>
+                                                    <th>Бонус (₽)</th>
+                                                    <th>Кат.</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="bonusTableBody1">
+                                                <!-- Заполняется через JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Колонка 2 -->
+                                <div class="col-md-4">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover table-sm">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Код</th>
+                                                    <th>Бонус (₽)</th>
+                                                    <th>Кат.</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="bonusTableBody2">
+                                                <!-- Заполняется через JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Колонка 3 -->
+                                <div class="col-md-4">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover table-sm">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Код</th>
+                                                    <th>Бонус (₽)</th>
+                                                    <th>Кат.</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="bonusTableBody3">
+                                                <!-- Заполняется через JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
+
                             <div class="mt-3">
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle"></i>

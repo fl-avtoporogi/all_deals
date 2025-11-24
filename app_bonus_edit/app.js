@@ -57,16 +57,19 @@ async function loadBonusCodes() {
 }
 
 /**
- * Отрисовка таблицы
+ * Отрисовка таблицы (3 колонки)
  */
 function renderTable() {
-    const tbody = document.getElementById('bonusTableBody');
-    tbody.innerHTML = '';
+    // Делим массив на 3 части
+    const third = Math.ceil(bonusCodes.length / 3);
+    const column1 = bonusCodes.slice(0, third);
+    const column2 = bonusCodes.slice(third, third * 2);
+    const column3 = bonusCodes.slice(third * 2);
 
-    bonusCodes.forEach((item, index) => {
-        const row = createTableRow(item, index);
-        tbody.appendChild(row);
-    });
+    // Рендерим каждую колонку
+    renderTableColumn('bonusTableBody1', column1, 0);
+    renderTableColumn('bonusTableBody2', column2, third);
+    renderTableColumn('bonusTableBody3', column3, third * 2);
 
     document.getElementById('totalCodes').textContent = bonusCodes.length;
     document.getElementById('tableContainer').style.display = 'block';
@@ -80,15 +83,29 @@ function renderTable() {
 }
 
 /**
+ * Отрисовка одной колонки таблицы
+ */
+function renderTableColumn(tbodyId, codes, startIndex) {
+    const tbody = document.getElementById(tbodyId);
+    tbody.innerHTML = '';
+
+    codes.forEach((item, localIndex) => {
+        const globalIndex = startIndex + localIndex;
+        const row = createTableRow(item, globalIndex);
+        tbody.appendChild(row);
+    });
+}
+
+/**
  * Создание строки таблицы
  */
 function createTableRow(item, index) {
     const tr = document.createElement('tr');
     tr.dataset.index = index;
 
-    // Определяем категорию
-    const category = item.code.startsWith('A') ? 'Категория A' :
-                     item.code.startsWith('B') ? 'Категория B' : 'Неизвестно';
+    // Определяем категорию (только буква)
+    const category = item.code.startsWith('A') ? 'A' :
+                     item.code.startsWith('B') ? 'B' : '?';
     const categoryBadge = item.code.startsWith('A') ? 'bg-primary' : 'bg-success';
 
     tr.innerHTML = `
@@ -97,7 +114,7 @@ function createTableRow(item, index) {
         </td>
         <td>
             <input type="number"
-                   class="form-control bonus-input"
+                   class="form-control bonus-input form-control-sm"
                    value="${item.bonus}"
                    min="0"
                    step="0.01"
@@ -289,19 +306,23 @@ async function importCSV() {
 }
 
 /**
- * Фильтрация таблицы по коду
+ * Фильтрация таблицы по коду (все 3 колонки)
  */
 function filterTable() {
     const searchValue = document.getElementById('searchInput').value.toLowerCase();
-    const rows = document.querySelectorAll('#bonusTableBody tr');
 
-    rows.forEach(row => {
-        const code = row.querySelector('td:first-child strong').textContent.toLowerCase();
-        if (code.includes(searchValue)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
+    // Фильтруем все 3 таблицы
+    ['bonusTableBody1', 'bonusTableBody2', 'bonusTableBody3'].forEach(tbodyId => {
+        const rows = document.querySelectorAll(`#${tbodyId} tr`);
+
+        rows.forEach(row => {
+            const code = row.querySelector('td:first-child strong').textContent.toLowerCase();
+            if (code.includes(searchValue)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
     });
 }
 
