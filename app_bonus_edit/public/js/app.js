@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('saveBtn').addEventListener('click', saveChanges);
     document.getElementById('importBtn').addEventListener('click', importCSV);
     document.getElementById('searchInput').addEventListener('input', filterTable);
+    document.getElementById('csvFile').addEventListener('change', handleFileSelect);
 
     // Подстраиваем высоту iframe в Битрикс24
     // Для локальных приложений BX24 уже готов, init не нужен
@@ -230,6 +231,24 @@ async function saveChanges() {
 }
 
 /**
+ * Обработка выбора файла
+ */
+function handleFileSelect(event) {
+    const fileInput = event.target;
+    const fileNameDisplay = document.getElementById('csvFileName');
+    const fileLabel = document.querySelector('.csv-file-text');
+
+    if (fileInput.files.length > 0) {
+        const fileName = fileInput.files[0].name;
+        fileNameDisplay.textContent = fileName;
+        fileLabel.innerHTML = '<i class="bi bi-file-earmark-check" style="color: #55D0A4; font-size: 14px;"></i> ' + fileName;
+    } else {
+        fileNameDisplay.textContent = '';
+        fileLabel.textContent = 'Выберите файл';
+    }
+}
+
+/**
  * Импорт из CSV файла
  */
 async function importCSV() {
@@ -294,6 +313,8 @@ async function importCSV() {
 
         // Очищаем input файла
         fileInput.value = '';
+        document.getElementById('csvFileName').textContent = '';
+        document.querySelector('.csv-file-text').textContent = 'Выберите файл';
 
         importBtn.innerHTML = originalText;
         importBtn.disabled = false;

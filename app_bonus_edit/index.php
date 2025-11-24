@@ -75,11 +75,18 @@ $apiBaseUrl = 'api.php?member_id=' . urlencode($memberId);
                         <p class="card-text text-muted small">
                             Формат файла: Код бонуса;Бонус (например: A1;35)
                         </p>
-                        <div class="input-group">
-                            <input type="file" class="form-control" id="csvFile" accept=".csv">
-                            <button class="btn btn-primary" type="button" id="importBtn">
-                                <i class="bi bi-upload"></i> Импортировать
-                            </button>
+                        <div class="csv-upload-wrapper">
+                            <div class="csv-upload-container">
+                                <label for="csvFile" class="csv-file-label">
+                                    <i class="bi bi-folder2-open"></i>
+                                    <span class="csv-file-text">Выберите файл</span>
+                                    <input type="file" id="csvFile" accept=".csv" class="csv-file-input">
+                                </label>
+                                <button class="btn btn-primary csv-upload-btn" type="button" id="importBtn">
+                                    <i class="bi bi-upload"></i> Импортировать
+                                </button>
+                            </div>
+                            <div class="csv-file-name" id="csvFileName"></div>
                         </div>
                         <div id="importResult" class="mt-3"></div>
                     </div>
