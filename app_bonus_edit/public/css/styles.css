@@ -1,229 +1,352 @@
 /**
  * Стили для приложения редактирования бонусов
+ * Дизайн в стиле Bitrix24 - минималистичный, деловой, чистый
  */
 
+/* === Общие стили === */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: #f8f9fa;
+    background-color: #F5F7FA;
+    color: #333333;
+    font-size: 14px;
+    line-height: 1.5;
 }
 
-/* Заголовки */
+/* === Заголовки === */
 h2 {
-    color: #2c3e50;
+    color: #2C3E50;
     font-weight: 600;
+    font-size: 24px;
+    margin-bottom: 8px;
 }
 
 .card-title {
-    color: #34495e;
-    font-weight: 500;
+    color: #525C69;
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 12px;
 }
 
-/* Карточки */
+/* === Карточки === */
 .card {
-    border: none;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    border-radius: 0.5rem;
-    margin-bottom: 1.5rem;
+    background: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .card-body {
-    padding: 1.5rem;
+    padding: 20px;
 }
 
-/* Таблица */
+/* === Таблица === */
 .table-responsive {
-    border-radius: 0.375rem;
+    border-radius: 6px;
     overflow: hidden;
+    border: 1px solid #E0E0E0;
 }
 
 .table {
     margin-bottom: 0;
+    font-size: 13px;
 }
 
 .table thead th {
+    background-color: #F5F7FA;
+    color: #525C69;
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom-width: 2px;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #E0E0E0;
+    border-top: none;
+    padding: 12px 10px;
+}
+
+.table tbody td {
+    padding: 10px;
+    vertical-align: middle;
+    border-bottom: 1px solid #F0F0F0;
+    color: #333333;
 }
 
 .table tbody tr {
-    transition: background-color 0.15s ease-in-out;
+    transition: background-color 0.15s ease;
 }
 
 .table tbody tr:hover {
-    background-color: #f8f9fa;
+    background-color: #FAFBFC;
 }
 
-/* Input для бонусов */
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* === Таблица: убираем стандартные классы Bootstrap === */
+.table-dark {
+    background-color: #F5F7FA !important;
+    color: #525C69 !important;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: transparent;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #FAFBFC;
+}
+
+/* === Input для бонусов === */
 .bonus-input {
     max-width: 150px;
     font-weight: 500;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 13px;
+    transition: all 0.2s ease;
 }
 
 .bonus-input:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    border-color: #2FC6F6;
+    box-shadow: 0 0 0 3px rgba(47, 198, 246, 0.1);
+    outline: none;
 }
 
-/* Badges */
+.bonus-input.changed {
+    border-color: #FFA900;
+    background-color: #FFF9E6;
+}
+
+/* === Badges === */
 .badge {
     font-weight: 500;
-    padding: 0.375rem 0.75rem;
-    font-size: 0.8125rem;
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
-/* Кнопки */
+.badge.bg-primary {
+    background-color: #2FC6F6 !important;
+}
+
+.badge.bg-secondary {
+    background-color: #A8ADB5 !important;
+}
+
+/* === Кнопки === */
 .btn {
     font-weight: 500;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    transition: all 0.15s ease-in-out;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
-.btn:hover {
+.btn:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.btn:active {
+.btn:active:not(:disabled) {
     transform: translateY(0);
+    box-shadow: none;
 }
 
 .btn-success {
-    background-color: #28a745;
-    border-color: #28a745;
+    background-color: #55D0A4;
+    border-color: #55D0A4;
+    color: #FFFFFF;
 }
 
-.btn-success:hover {
-    background-color: #218838;
-    border-color: #1e7e34;
+.btn-success:hover:not(:disabled) {
+    background-color: #41C293;
+    border-color: #41C293;
 }
 
 .btn-success:disabled {
-    background-color: #6c757d;
-    border-color: #6c757d;
+    background-color: #D0D4D9;
+    border-color: #D0D4D9;
     cursor: not-allowed;
     transform: none;
+    opacity: 0.6;
 }
 
 .btn-primary {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+    background-color: #2FC6F6;
+    border-color: #2FC6F6;
+    color: #FFFFFF;
 }
 
-.btn-primary:hover {
-    background-color: #0b5ed7;
-    border-color: #0a58ca;
+.btn-primary:hover:not(:disabled) {
+    background-color: #1AB5E6;
+    border-color: #1AB5E6;
 }
 
-/* Иконки */
+/* === Иконки === */
 .bi {
     vertical-align: -0.125em;
 }
 
-/* Поле поиска */
+/* === Поле поиска === */
 #searchInput {
-    border-radius: 0.375rem;
-    border: 1px solid #ced4da;
+    border-radius: 4px;
+    border: 1px solid #E0E0E0;
+    padding: 8px 12px;
+    font-size: 13px;
+    transition: all 0.2s ease;
 }
 
 #searchInput:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    border-color: #2FC6F6;
+    box-shadow: 0 0 0 3px rgba(47, 198, 246, 0.1);
+    outline: none;
 }
 
-/* Секция импорта */
+#searchInput::placeholder {
+    color: #A8ADB5;
+}
+
+/* === Секция импорта === */
 .input-group .form-control {
-    border-top-left-radius: 0.375rem;
-    border-bottom-left-radius: 0.375rem;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border: 1px solid #E0E0E0;
+    font-size: 13px;
+}
+
+.input-group .form-control:focus {
+    border-color: #2FC6F6;
+    box-shadow: 0 0 0 3px rgba(47, 198, 246, 0.1);
+    z-index: 3;
 }
 
 .input-group .btn {
-    border-top-right-radius: 0.375rem;
-    border-bottom-right-radius: 0.375rem;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
 }
 
-/* Алерты */
+/* === Алерты === */
 .alert {
-    border-radius: 0.375rem;
-    border: none;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 4px;
+    border: 1px solid transparent;
+    padding: 12px 16px;
+    font-size: 13px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .alert-success {
-    background-color: #d1e7dd;
-    color: #0f5132;
+    background-color: #E8F7F2;
+    color: #2B7C5F;
+    border-color: #55D0A4;
 }
 
 .alert-danger {
-    background-color: #f8d7da;
-    color: #842029;
+    background-color: #FEECEB;
+    color: #C7402D;
+    border-color: #FF5752;
 }
 
 .alert-warning {
-    background-color: #fff3cd;
-    color: #664d03;
+    background-color: #FFF9E6;
+    color: #8A6E00;
+    border-color: #FFA900;
 }
 
-/* Индикатор загрузки */
+/* === Индикатор загрузки === */
 #loadingSpinner {
-    color: #6c757d;
+    color: #A8ADB5;
 }
 
 .spinner-border {
     width: 3rem;
     height: 3rem;
+    border-color: #E0E0E0;
+    border-right-color: #2FC6F6;
 }
 
-/* Результат импорта */
+/* === Результат импорта === */
 #importResult .alert {
     margin-bottom: 0;
 }
 
 #importResult .alert ul {
-    margin-top: 0.5rem;
-    padding-left: 1.25rem;
+    margin-top: 8px;
+    padding-left: 20px;
     max-height: 200px;
     overflow-y: auto;
 }
 
 #importResult .alert ul li {
-    font-size: 0.875rem;
-    margin-bottom: 0.25rem;
+    font-size: 12px;
+    margin-bottom: 4px;
 }
 
-/* Адаптивность */
-@media (max-width: 768px) {
-    .container-fluid {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-
-    .card-body {
-        padding: 1rem;
-    }
-
-    .table {
-        font-size: 0.875rem;
-    }
-
-    .bonus-input {
-        max-width: 100px;
-    }
-
-    h2 {
-        font-size: 1.5rem;
-    }
-
-    .btn {
-        font-size: 0.875rem;
-        padding: 0.375rem 0.75rem;
-    }
+/* === Скроллбар для списка ошибок === */
+#importResult .alert ul::-webkit-scrollbar {
+    width: 6px;
 }
 
-/* Анимации */
+#importResult .alert ul::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+#importResult .alert ul::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+#importResult .alert ul::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* === Текст === */
+.card-text.small {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #6F7580;
+}
+
+.text-muted {
+    color: #A8ADB5 !important;
+}
+
+/* === Дополнительные стили === */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.alert-success strong {
+    color: #2B7C5F;
+}
+
+.alert-warning strong {
+    color: #8A6E00;
+}
+
+.alert-danger strong {
+    color: #C7402D;
+}
+
+/* === Контейнер === */
+.container-fluid {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* === Анимации === */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -239,55 +362,76 @@ h2 {
     animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Скроллбар для списка ошибок */
-#importResult .alert ul::-webkit-scrollbar {
-    width: 8px;
+/* === Адаптивность === */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .card-body {
+        padding: 16px;
+    }
+
+    .table {
+        font-size: 12px;
+    }
+
+    .table thead th {
+        font-size: 11px;
+        padding: 10px 8px;
+    }
+
+    .table tbody td {
+        padding: 8px;
+    }
+
+    .bonus-input {
+        max-width: 100px;
+        font-size: 12px;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    .btn {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
 }
 
-#importResult .alert ul::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
+/* === Улучшение визуального баланса === */
+.row {
+    margin-left: -10px;
+    margin-right: -10px;
 }
 
-#importResult .alert ul::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
+.col-md-4 {
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
-#importResult .alert ul::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.5);
+/* === Улучшение отступов === */
+.py-4 {
+    padding-top: 24px !important;
+    padding-bottom: 24px !important;
 }
 
-/* Подсветка измененных полей */
-.bonus-input.changed {
-    border-color: #ffc107;
-    background-color: #fff3cd;
+.mb-4 {
+    margin-bottom: 24px !important;
 }
 
-/* Дополнительные улучшения */
-.card-text.small {
-    font-size: 0.875rem;
-    line-height: 1.5;
+.mt-3 {
+    margin-top: 16px !important;
 }
 
-.text-muted {
-    color: #6c757d !important;
+.mb-3 {
+    margin-bottom: 16px !important;
 }
 
-/* Улучшение внешнего вида disabled кнопок */
-.btn:disabled {
-    opacity: 0.65;
-}
-
-/* Стиль для успешного импорта */
-.alert-success strong {
-    color: #0f5132;
-}
-
-.alert-warning strong {
-    color: #664d03;
-}
-
-.alert-danger strong {
-    color: #842029;
+/* === Стиль для сильфовного акцента (коды бонусов) === */
+strong {
+    font-weight: 600;
+    color: #2C3E50;
 }
