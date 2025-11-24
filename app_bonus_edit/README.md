@@ -26,7 +26,7 @@
 ## Структура файлов
 
 ```
-app_bonus_edit_new/
+app_bonus_edit/
 ├── index.php              # Главный обработчик (точка входа)
 ├── install.php            # Обработчик установки OAuth
 ├── api.php                # Backend API для CRUD операций
@@ -47,8 +47,8 @@ app_bonus_edit_new/
 ## URL приложения
 
 **Production:**
-- Обработчик: `https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit_new/index.php`
-- Установка: `https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit_new/install.php`
+- Обработчик: `https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit/index.php`
+- Установка: `https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit/install.php`
 
 ## Установка в Битрикс24
 
@@ -71,10 +71,10 @@ Client Secret: eBfqBtkAZ8fcU2D91Lv76fktxUTGQenKM4TH6EYEyCUz5tz55p
 
 ```
 Путь вашего обработчика:
-https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit_new/index.php
+https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit/index.php
 
 Путь для первоначальной установки:
-https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit_new/install.php
+https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit/install.php
 ```
 
 ### Шаг 4: Настроить интерфейс
@@ -135,7 +135,7 @@ https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit_new/install.php
 /webhooks/avtoporogi/
 ├── db_connect.php
 └── all_deals/
-    └── app_bonus_edit_new/
+    └── app_bonus_edit/
 ```
 
 ### Кэш
@@ -230,7 +230,7 @@ $whitelist_user_ids = [123, 456, 789]; // ID пользователей из Б�
 
 Для проверки подключения к БД откройте:
 ```
-https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit_new/test_api.php
+https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit/test_api.php
 ```
 
 Должен вернуть JSON с информацией о подключении.
@@ -244,7 +244,7 @@ https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit_new/test_api.php
 2. Убедитесь, что `settings.json` создан
 3. Проверьте ответ от API: откройте в новой вкладке
    ```
-   https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit_new/api.php?action=list&member_id=test
+   https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit/api.php?action=list&member_id=test
    ```
 
 **Проблема:** Ошибка "db_connect.php not found"
