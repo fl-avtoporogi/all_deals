@@ -38,7 +38,7 @@ $apiBaseUrl = 'api.php?member_id=' . urlencode($memberId);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 
     <!-- Custom styles -->
-    <link href="styles.css" rel="stylesheet">
+    <link href="public/css/styles.css" rel="stylesheet">
 
     <!-- Bitrix24 JS SDK (только для управления UI) -->
     <script src="//api.bitrix24.com/api/v1/"></script>
@@ -161,6 +161,6 @@ $apiBaseUrl = 'api.php?member_id=' . urlencode($memberId);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Custom JavaScript -->
-    <script src="app.js"></script>
+    <script src="public/js/app.js"></script>
 </body>
 </html>
