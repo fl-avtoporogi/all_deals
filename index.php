@@ -676,7 +676,7 @@ echo "Выражение успешно подготовлено.<br>";
 
 // Привязываем параметры
 $bind = $stmt->bind_param(
-    "isisssssisisddddddissiisdd", // i - integer, s - string, d - double (25 параметров)
+    "isisssssissddddddisiiisdd", // i - integer, s - string, d - double (25 параметров)
     $dealData['deal_id'],                // 1. i
     $dealData['title'],                  // 2. s
     $dealData['funnel_id'],              // 3. i
@@ -697,11 +697,11 @@ $bind = $stmt->bind_param(
     $dealData['bonus_category_b'],       // 18. d
     $dealData['channel_id'],             // 19. i
     $dealData['channel_name'],           // 20. s
-    $dealData['contact_id'],             // 21. s (может быть NULL, используем s для гибкости)
-    $dealData['contact_responsible_id'], // 22. i
-    $dealData['contact_responsible_name'], // 23. s
-    $dealData['client_bonus'],           // 24. d
-    $dealData['client_bonus_rate']       // 25. d
+    $dealData['contact_id'],             // 21. i (ID контакта - integer)
+    $dealData['contact_responsible_id'], // 22. i (ID ответственного - integer)
+    $dealData['contact_responsible_name'], // 23. s (имя - string)
+    $dealData['client_bonus'],           // 24. d (премия - decimal)
+    $dealData['client_bonus_rate']       // 25. d (коэффициент - decimal)
 );
 
 if (!$bind) {
