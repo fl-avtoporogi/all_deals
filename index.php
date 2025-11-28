@@ -515,12 +515,12 @@ function getCurrentDealValues($dealId) {
 // Функция для проверки необходимости обновления (защита от зацикливания)
 function needsUpdate($currentValues, $newValues, $tolerance = 0.01) {
     return (
-        abs($currentValues['client_bonus'] - $newValues['client_bonus']) > $tolerance ||
+        abs(floatval($currentValues['client_bonus']) - floatval($newValues['client_bonus'])) > $tolerance ||
         $currentValues['contact_responsible_id'] != $newValues['contact_responsible_id'] ||
-        abs($currentValues['bonus_category_a'] - $newValues['bonus_category_a']) > $tolerance ||
-        abs($currentValues['bonus_category_b'] - $newValues['bonus_category_b']) > $tolerance ||
-        abs($currentValues['bonus_b_ratio'] - $newValues['bonus_b_ratio']) > $tolerance ||
-        abs($currentValues['bonus_total'] - $newValues['bonus_total']) > $tolerance
+        abs(floatval($currentValues['bonus_category_a']) - floatval($newValues['bonus_category_a'])) > $tolerance ||
+        abs(floatval($currentValues['bonus_category_b']) - floatval($newValues['bonus_category_b'])) > $tolerance ||
+        abs(floatval($currentValues['bonus_b_ratio']) - floatval($newValues['bonus_b_ratio'])) > $tolerance ||
+        abs(floatval($currentValues['bonus_total']) - floatval($newValues['bonus_total'])) > $tolerance
     );
 }
 
