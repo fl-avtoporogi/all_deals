@@ -708,7 +708,7 @@ if ($calculateBonuses) {
         client_bonus = VALUES(client_bonus),
         client_bonus_rate = VALUES(client_bonus_rate)";
         
-    $paramTypes = "isisssssissddddddisiiisdd"; // 25 параметров
+    $paramTypes = "isisssssisisddddddisiisdd"; // 25 параметров
 } else {
     echo "Используем ЧАСТИЧНЫЙ запрос (без обновления бонусов и премий)<br>";
     $sql = "INSERT INTO all_deals (
@@ -750,7 +750,7 @@ if ($calculateBonuses) {
         contact_responsible_id = VALUES(contact_responsible_id),
         contact_responsible_name = VALUES(contact_responsible_name)";
         
-    $paramTypes = "isisssssissdisidi"; // 18 параметров
+    $paramTypes = "isisssssisisdisii s"; // 18 параметров
 }
 
 $stmt = $mysqli->prepare($sql);
