@@ -56,7 +56,7 @@ $apiBaseUrl = 'api.php?member_id=' . urlencode($memberId);
         <div class="row mb-4">
             <div class="col">
                 <h2 class="mb-0">
-                    <i class="bi bi-cash-coin"></i> Редактор кодов бонусов
+                    <!--i class="bi bi-cash-coin"></i--> Редактор кодов бонусов
                 </h2>
                 <?php if (!empty($userName)): ?>
                     <small class="text-muted">Пользователь: <?php echo htmlspecialchars($userName); ?></small>
