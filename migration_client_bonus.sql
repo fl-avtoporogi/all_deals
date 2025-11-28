@@ -14,11 +14,11 @@ SELECT
 
 -- Шаг 2: Добавление новых колонок в таблицу all_deals
 ALTER TABLE all_deals
-ADD COLUMN contact_id INT(11) AFTER responsible_name COMMENT 'ID контакта из сделки',
-ADD COLUMN contact_responsible_id INT(11) AFTER contact_id COMMENT 'ID ответственного за контакт',
-ADD COLUMN contact_responsible_name VARCHAR(255) AFTER contact_responsible_id COMMENT 'Имя ответственного за контакт',
-ADD COLUMN client_bonus DECIMAL(15,2) DEFAULT 0.00 AFTER contact_responsible_name COMMENT 'Премия за клиента (5% от суммы сделки)',
-ADD COLUMN client_bonus_rate DECIMAL(5,4) DEFAULT 0.0500 AFTER client_bonus COMMENT 'Коэффициент премии (для будущего использования)',
+ADD COLUMN contact_id INT(11) AFTER responsible_name,
+ADD COLUMN contact_responsible_id INT(11) AFTER contact_id,
+ADD COLUMN contact_responsible_name VARCHAR(255) AFTER contact_responsible_id,
+ADD COLUMN client_bonus DECIMAL(15,2) DEFAULT 0.00 AFTER contact_responsible_name,
+ADD COLUMN client_bonus_rate DECIMAL(5,4) DEFAULT 0.0500 AFTER client_bonus,
 ADD INDEX idx_contact_id (contact_id),
 ADD INDEX idx_contact_responsible_id (contact_responsible_id);
 
