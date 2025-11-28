@@ -30,7 +30,7 @@ class ClientBonusService
         $result = $this->db->query($query);
         
         if (!$result) {
-            Logger::error("Failed to get client bonus rates: " . $this->db->error);
+            // Logger::error("Failed to get client bonus rates: " . $this->db->error); // Закомментировано
             return [];
         }
 
@@ -61,7 +61,7 @@ class ClientBonusService
         $result = $this->db->query($query);
         
         if (!$result) {
-            Logger::error("Failed to get current client bonus rate: " . $this->db->error);
+            // Logger::error("Failed to get current client bonus rate: " . $this->db->error); // Закомментировано
             return null;
         }
 
@@ -108,7 +108,7 @@ class ClientBonusService
         );
 
         if (!$stmt) {
-            Logger::error("Prepare failed: " . $this->db->error);
+            // Logger::error("Prepare failed: " . $this->db->error); // Закомментировано
             return ['success' => false, 'errors' => ['Ошибка подготовки запроса']];
         }
 
@@ -117,21 +117,21 @@ class ClientBonusService
         $bind = $stmt->bind_param("sd", $createdDate, $bonusRateFormatted);
         
         if (!$bind) {
-            Logger::error("Bind failed: " . $stmt->error);
+            // Logger::error("Bind failed: " . $stmt->error); // Закомментировано
             return ['success' => false, 'errors' => ['Ошибка привязки параметров']];
         }
 
         $execute = $stmt->execute();
         
         if (!$execute) {
-            Logger::error("Execute failed: " . $stmt->error);
+            // Logger::error("Execute failed: " . $stmt->error); // Закомментировано
             return ['success' => false, 'errors' => ['Ошибка выполнения запроса']];
         }
 
         $insertedId = $this->db->insert_id;
         $stmt->close();
 
-        Logger::info("Client bonus rate added: {$bonusRate}% for date {$createdDate}");
+        // Logger::info("Client bonus rate added: {$bonusRate}% for date {$createdDate}"); // Закомментировано чтобы не портить JSON
 
         return [
             'success' => true,
@@ -157,7 +157,7 @@ class ClientBonusService
         $result = $this->db->query($query);
         
         if (!$result) {
-            Logger::error("Failed to get client bonus stats: " . $this->db->error);
+            // Logger::error("Failed to get client bonus stats: " . $this->db->error); // Закомментировано
             return [];
         }
 

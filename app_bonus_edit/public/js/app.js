@@ -561,7 +561,26 @@ async function addClientBonus(event) {
             })
         });
         
-        const result = await response.json();
+        let result;
+        try {
+            const responseText = await response.text();
+            console.log('Raw response:', responseText); // Отладочный вывод
+            
+            if (!responseText.trim()) {
+                showClientBonusError('Пустой ответ от сервера');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+            
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            showClientBonusError('Ошибка парсинга JSON: ' + parseError.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            return;
+        }
         
         if (!result.success) {
             showClientBonusError('Ошибка добавления: ' + (result.error || 'Неизвестная ошибка'));
