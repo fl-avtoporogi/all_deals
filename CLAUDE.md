@@ -22,8 +22,19 @@ This is a Bitrix24 integration system for Автопороги company that mana
 - Uses file-based caching (`userfields_cache.json`, `bonus_codes_cache.json`, TTL: 1 hour)
 
 **Key tables:**
-- `bonus_codes` - Maps bonus code (e.g., "A1", "B5") to bonus amount
+- `bonus_codes` - Maps bonus code (e.g., "A1", "B5") to bonus amount and product name
 - `all_deals` - Stores calculated metrics: `turnover_category_a/b`, `bonus_category_a/b`, `quantity`
+
+**bonus_codes table structure:**
+```sql
+CREATE TABLE bonus_codes (
+    code VARCHAR(10) PRIMARY KEY,
+    bonus_amount DECIMAL(10,2) NOT NULL,
+    Name VARCHAR(100),  -- Product/component name (e.g., "Porог", "Arка")
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)
+```
 
 **Bonus code normalization:**
 - Cyrillic А,В → Latin A,B (prevents user input errors)
@@ -34,7 +45,7 @@ This is a Bitrix24 integration system for Автопороги company that mana
 
 ### Bonus Code Editor App (app_bonus_edit/)
 
-**MVC-based Bitrix24 embedded application** (v3.1) with modular architecture:
+**MVC-based Bitrix24 embedded application** (v4.0) with modular architecture:
 
 ```
 src/
@@ -63,8 +74,10 @@ public/
 **Key features:**
 - OAuth via CRest SDK (Client ID: `local.692466e0264de0.30890025`)
 - 3-column table layout with natural sorting (A1, A2, ..., A10, A11)
+- Displays product/component names from `Name` field (read-only, non-editable)
 - Auto-save on input change
 - CSV import with encoding detection (UTF-8, Windows-1251)
+- Search by code AND product name
 - All changes logged to `logs/bonus_changes.log`
 - Cache invalidation on updates
 
@@ -84,20 +97,28 @@ public/
 
 ## Common Tasks
 
-### Initialize Bonus Codes Database
+### Manage Bonus Codes
+
+Use the web application to add/edit/import bonus codes:
 
 ```bash
-php import_bonus_codes.php
+# Open in browser or Bitrix24
+https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit/index.php
 ```
 
-Creates `bonus_codes` table and imports from `bonus_code.csv`. Run once or when updating codes.
-
-**CSV format:**
+**CSV import format** (through app UI):
 ```csv
-Код бонуса;Бонус
-A1;35
-B5;45
+Код;Наименование;Бонус
+A1;Порог;35
+B5;Усилитель 200;50
 ```
+
+Features:
+- Add codes manually through table
+- Bulk import from CSV
+- Edit bonus amounts with auto-save
+- View product names
+- Search by code or name
 
 ### Test Main Webhook
 
@@ -106,13 +127,31 @@ B5;45
 curl "https://9dk.ru/webhooks/avtoporogi/all_deals/index.php?deal_id=101827"
 ```
 
-### Refresh Multiple Deals
+### Refresh Multiple Deals (Batch Processing)
 
 ```bash
+# Process all deals (recommended method)
 php refresh_deals_NEW.php
+
+# Test on limited number of deals
+php refresh_deals_NEW.php limit 100
+
+# Reset progress and start over
+php refresh_deals_NEW.php reset
 ```
 
-Batch processes deals with progress tracking and automatic resume on interruption.
+**Features:**
+- Automatic progress tracking (`refresh_progress_new.json`)
+- Can interrupt and resume
+- Parallel HTTP processing
+- Detailed logging
+
+**Alternative (faster for huge datasets):**
+```bash
+php fast_update_deals.php
+```
+- 3-25x faster than serial processing
+- Parallel processing of deals
 
 ### Test Bonus Editor API
 
@@ -148,7 +187,11 @@ Edit `src/Repository/BonusRepository.php` - all SQL queries isolated here. Alway
 
 ### Changing Business Logic
 
-Edit `src/Services/BonusService.php` or `CsvImportService.php`. Services handle validation, logging, cache invalidation.
+Edit `src/Services/BonusService.php` or `CsvImportService.php`. Services handle:
+- Validation of bonus amounts and codes
+- Logging of all changes to `logs/bonus_changes.log`
+- Cache invalidation when codes are updated
+- CSV parsing with encoding detection
 
 ### UI Changes
 
@@ -189,6 +232,16 @@ Bonus codes must use natural sort (`strnatcmp`) to get correct order: A1, A2, ..
 
 Implemented in `BonusRepository::findAll()`.
 
+### Product Name Field
+
+The `Name` field in `bonus_codes` table stores human-readable names (e.g., "Порог", "Усилитель 200").
+
+**Important:**
+- Field is displayed in read-only format in the app UI
+- Not editable through the app (intentionally)
+- To update: Edit directly in DB or re-import CSV with new names
+- Examples: "Порог", "Арка", "Заглушка", "Усилитель 200", "Лонжерон" etc.
+
 ### Caching
 
 Two cache types with 1-hour TTL:
@@ -227,10 +280,11 @@ $config = [
 
 ## Documentation
 
-- **Main system:** `README.md` - Installation and usage instructions
-- **Bonus editor:** `app_bonus_edit/README.md` - Full app documentation
-- **Refactoring:** `app_bonus_edit/REFACTORING.md` - Architecture details, migration from v2 to v3
-- **Quick guides:** `_docs/` folder (various optimization and quickstart guides)
+- **Main system:** `README.md` - Complete system guide and quick start
+- **Bonus editor:** `app_bonus_edit/README.md` - Full web app documentation and features
+- **Architecture:** `app_bonus_edit/_docs/REFACTORING.md` - MVC architecture details
+- **Quick guides:** `_docs/` folder - Optimization guides and use cases
+- **Developer guide:** This file (CLAUDE.md)
 
 ## File Locations
 
