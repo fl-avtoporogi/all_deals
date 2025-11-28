@@ -6,6 +6,7 @@ echo "=== VERSION: 2025-11-17 CLOSEDATE-FIX-v8 ===<br>";
 //https://avtoporogi.bitrix24.ru/crm/configs/bp/CRM_DEAL/edit/37/#A66894_66463_78347_39643 - запуск из БП
 //https://42b.ru/webhooks/avtoporogi/z51/index.php?deal_id={{ID}} - здесь обновляются данные по товарам
 //9dk.ru/webhooks/avtoporogi/all_deals/index.php?deal_id=101827 - тест
+//9dk.ru/webhooks/avtoporogi/all_deals/index.php?deal_id=101827&bonus_calc=y - тест с пересчетом бонуса
 //https://avtoporogi.bitrix24.ru/crm/configs/bp/CRM_DEAL/edit/37/#A2065_62866_52907_49594 - условие пересчета бонусов в зависимости от стадии
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -749,7 +750,7 @@ if ($calculateBonuses) {
         contact_responsible_id = VALUES(contact_responsible_id),
         contact_responsible_name = VALUES(contact_responsible_name)";
         
-    $paramTypes = "isisssssissisii"; // 18 параметров
+    $paramTypes = "isisssssissdisii"; // 18 параметров
 }
 
 $stmt = $mysqli->prepare($sql);
