@@ -507,14 +507,31 @@ echo "Данные сделки успешно получены.<br>";
 // Получаем данные сделки
 $deal = $dealResult['result'];
 
-// Получаем товары сделки с данными из каталога
-$products = getDealProductsWithCatalogData($dealId);
+// Проверяем, нужно ли рассчитывать бонусы
+$calculateBonuses = isset($_GET['bonus_calc']) && $_GET['bonus_calc'] === 'y';
+echo "Расчет бонусов: " . ($calculateBonuses ? "ВКЛЮЧЕН (bonus_calc=y)" : "ОТКЛЮЧЕН") . "<br>";
 
-// Получаем коды бонусов
-$bonusCodesMap = getBonusCodesMap($mysqli);
+// Инициализируем переменные для расчетов
+$calculations = [
+    'turnover_category_a' => 0,
+    'turnover_category_b' => 0,
+    'bonus_category_a' => 0,
+    'bonus_category_b' => 0,
+    'total_quantity' => 0
+];
 
-// Рассчитываем бонусы и обороты
-$calculations = calculateBonusesAndTurnovers($products, $bonusCodesMap);
+if ($calculateBonuses) {
+    // Получаем товары сделки с данными из каталога
+    $products = getDealProductsWithCatalogData($dealId);
+
+    // Получаем коды бонусов
+    $bonusCodesMap = getBonusCodesMap($mysqli);
+
+    // Рассчитываем бонусы и обороты
+    $calculations = calculateBonusesAndTurnovers($products, $bonusCodesMap);
+} else {
+    echo "Пропускаем расчет бонусов и оборотов - используем текущие значения из БД<br>";
+}
 
 // Получаем карту пользовательских полей
 $fieldIdToValueMap = getUserFieldsMap();
@@ -580,9 +597,16 @@ function getCurrentClientBonusRate($mysqli) {
     return 0.05; // Значение по умолчанию
 }
 
-// Расчет премии за клиента (берем из БД)
-$clientBonusRate = getCurrentClientBonusRate($mysqli);
-$clientBonus = $opportunityAmount ? round($opportunityAmount * $clientBonusRate, 2) : 0.00;
+// Расчет премии за клиента (только если нужно рассчитывать бонусы)
+if ($calculateBonuses) {
+    $clientBonusRate = getCurrentClientBonusRate($mysqli);
+    $clientBonus = $opportunityAmount ? round($opportunityAmount * $clientBonusRate, 2) : 0.00;
+} else {
+    // Если бонусы не рассчитываем, используем нулевые значения для премии
+    $clientBonusRate = 0;
+    $clientBonus = 0.00;
+    echo "Премия за клиента не рассчитывается (bonus_calc отсутствует)<br>";
+}
 
 // Определяем дату закрытия: только если сделка закрыта (CLOSED = Y)
 $closedate = null;
@@ -627,62 +651,108 @@ echo '<pre>';
 print_r($dealData);
 echo '</pre>';
 
-// Подготовка SQL-запроса для вставки данных с использованием подготовленных выражений
-echo "Подготовлено выражение для вставки.<br>";
+// Подготовка SQL-запроса в зависимости от флага расчета бонусов
+if ($calculateBonuses) {
+    echo "Используем ПОЛНЫЙ запрос (с бонусами и премиями)<br>";
+    $sql = "INSERT INTO all_deals (
+        deal_id,
+        title,
+        funnel_id,
+        funnel_name,
+        stage_id,
+        stage_name,
+        date_create,
+        closedate,
+        responsible_id,
+        responsible_name,
+        department_id,
+        department_name,
+        opportunity,
+        quantity,
+        turnover_category_a,
+        turnover_category_b,
+        bonus_category_a,
+        bonus_category_b,
+        channel_id,
+        channel_name,
+        contact_id,
+        contact_responsible_id,
+        contact_responsible_name,
+        client_bonus,
+        client_bonus_rate
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+        title = VALUES(title),
+        funnel_id = VALUES(funnel_id),
+        funnel_name = VALUES(funnel_name),
+        stage_id = VALUES(stage_id),
+        stage_name = VALUES(stage_name),
+        date_create = VALUES(date_create),
+        closedate = VALUES(closedate),
+        responsible_id = VALUES(responsible_id),
+        responsible_name = VALUES(responsible_name),
+        department_id = VALUES(department_id),
+        department_name = VALUES(department_name),
+        opportunity = VALUES(opportunity),
+        quantity = VALUES(quantity),
+        turnover_category_a = VALUES(turnover_category_a),
+        turnover_category_b = VALUES(turnover_category_b),
+        bonus_category_a = VALUES(bonus_category_a),
+        bonus_category_b = VALUES(bonus_category_b),
+        channel_id = VALUES(channel_id),
+        channel_name = VALUES(channel_name),
+        contact_id = VALUES(contact_id),
+        contact_responsible_id = VALUES(contact_responsible_id),
+        contact_responsible_name = VALUES(contact_responsible_name),
+        client_bonus = VALUES(client_bonus),
+        client_bonus_rate = VALUES(client_bonus_rate)";
+        
+    $paramTypes = "isisssssissddddddisiiisdd"; // 25 параметров
+} else {
+    echo "Используем ЧАСТИЧНЫЙ запрос (без обновления бонусов и премий)<br>";
+    $sql = "INSERT INTO all_deals (
+        deal_id,
+        title,
+        funnel_id,
+        funnel_name,
+        stage_id,
+        stage_name,
+        date_create,
+        closedate,
+        responsible_id,
+        responsible_name,
+        department_id,
+        department_name,
+        opportunity,
+        channel_id,
+        channel_name,
+        contact_id,
+        contact_responsible_id,
+        contact_responsible_name
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+        title = VALUES(title),
+        funnel_id = VALUES(funnel_id),
+        funnel_name = VALUES(funnel_name),
+        stage_id = VALUES(stage_id),
+        stage_name = VALUES(stage_name),
+        date_create = VALUES(date_create),
+        closedate = VALUES(closedate),
+        responsible_id = VALUES(responsible_id),
+        responsible_name = VALUES(responsible_name),
+        department_id = VALUES(department_id),
+        department_name = VALUES(department_name),
+        opportunity = VALUES(opportunity),
+        channel_id = VALUES(channel_id),
+        channel_name = VALUES(channel_name),
+        contact_id = VALUES(contact_id),
+        contact_responsible_id = VALUES(contact_responsible_id),
+        contact_responsible_name = VALUES(contact_responsible_name)";
+        
+    $paramTypes = "isisssssissisii"; // 18 параметров
+}
 
-$stmt = $mysqli->prepare("INSERT INTO all_deals (
-    deal_id,
-    title,
-    funnel_id,
-    funnel_name,
-    stage_id,
-    stage_name,
-    date_create,
-    closedate,
-    responsible_id,
-    responsible_name,
-    department_id,
-    department_name,
-    opportunity,
-    quantity,
-    turnover_category_a,
-    turnover_category_b,
-    bonus_category_a,
-    bonus_category_b,
-    channel_id,
-    channel_name,
-    contact_id,
-    contact_responsible_id,
-    contact_responsible_name,
-    client_bonus,
-    client_bonus_rate
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-ON DUPLICATE KEY UPDATE
-    title = VALUES(title),
-    funnel_id = VALUES(funnel_id),
-    funnel_name = VALUES(funnel_name),
-    stage_id = VALUES(stage_id),
-    stage_name = VALUES(stage_name),
-    date_create = VALUES(date_create),
-    closedate = VALUES(closedate),
-    responsible_id = VALUES(responsible_id),
-    responsible_name = VALUES(responsible_name),
-    department_id = VALUES(department_id),
-    department_name = VALUES(department_name),
-    opportunity = VALUES(opportunity),
-    quantity = VALUES(quantity),
-    turnover_category_a = VALUES(turnover_category_a),
-    turnover_category_b = VALUES(turnover_category_b),
-    bonus_category_a = VALUES(bonus_category_a),
-    bonus_category_b = VALUES(bonus_category_b),
-    channel_id = VALUES(channel_id),
-    channel_name = VALUES(channel_name),
-    contact_id = VALUES(contact_id),
-    contact_responsible_id = VALUES(contact_responsible_id),
-    contact_responsible_name = VALUES(contact_responsible_name),
-    client_bonus = VALUES(client_bonus),
-    client_bonus_rate = VALUES(client_bonus_rate)
-");
+$stmt = $mysqli->prepare($sql);
 
 if (!$stmt) {
     die("Ошибка подготовки запроса: " . htmlspecialchars($mysqli->error) . "<br>");
@@ -690,35 +760,61 @@ if (!$stmt) {
 
 echo "Выражение успешно подготовлено.<br>";
 
-// Привязываем параметры
-$bind = $stmt->bind_param(
-    "isisssssissddddddisiiisdd", // i - integer, s - string, d - double (25 параметров)
-    $dealData['deal_id'],                // 1. i
-    $dealData['title'],                  // 2. s
-    $dealData['funnel_id'],              // 3. i
-    $dealData['funnel_name'],            // 4. s
-    $dealData['stage_id'],               // 5. s
-    $dealData['stage_name'],             // 6. s
-    $dealData['date_create'],            // 7. s
-    $dealData['closedate'],              // 8. s
-    $dealData['responsible_id'],         // 9. i
-    $dealData['responsible_name'],       // 10. s
-    $dealData['department_id'],          // 11. i
-    $dealData['department_name'],        // 12. s
-    $dealData['opportunity'],            // 13. d
-    $dealData['quantity'],               // 14. d
-    $dealData['turnover_category_a'],    // 15. d
-    $dealData['turnover_category_b'],    // 16. d
-    $dealData['bonus_category_a'],       // 17. d
-    $dealData['bonus_category_b'],       // 18. d
-    $dealData['channel_id'],             // 19. i
-    $dealData['channel_name'],           // 20. s
-    $dealData['contact_id'],             // 21. i (ID контакта - integer)
-    $dealData['contact_responsible_id'], // 22. i (ID ответственного - integer)
-    $dealData['contact_responsible_name'], // 23. s (имя - string)
-    $dealData['client_bonus'],           // 24. d (премия - decimal)
-    $dealData['client_bonus_rate']       // 25. d (коэффициент - decimal)
-);
+// Привязываем параметры в зависимости от типа запроса
+if ($calculateBonuses) {
+    // Полный запрос с бонусами - 25 параметров
+    $bind = $stmt->bind_param(
+        $paramTypes,
+        $dealData['deal_id'],                // 1. i
+        $dealData['title'],                  // 2. s
+        $dealData['funnel_id'],              // 3. i
+        $dealData['funnel_name'],            // 4. s
+        $dealData['stage_id'],               // 5. s
+        $dealData['stage_name'],             // 6. s
+        $dealData['date_create'],            // 7. s
+        $dealData['closedate'],              // 8. s
+        $dealData['responsible_id'],         // 9. i
+        $dealData['responsible_name'],       // 10. s
+        $dealData['department_id'],          // 11. i
+        $dealData['department_name'],        // 12. s
+        $dealData['opportunity'],            // 13. d
+        $dealData['quantity'],               // 14. d
+        $dealData['turnover_category_a'],    // 15. d
+        $dealData['turnover_category_b'],    // 16. d
+        $dealData['bonus_category_a'],       // 17. d
+        $dealData['bonus_category_b'],       // 18. d
+        $dealData['channel_id'],             // 19. i
+        $dealData['channel_name'],           // 20. s
+        $dealData['contact_id'],             // 21. i (ID контакта - integer)
+        $dealData['contact_responsible_id'], // 22. i (ID ответственного - integer)
+        $dealData['contact_responsible_name'], // 23. s (имя - string)
+        $dealData['client_bonus'],           // 24. d (премия - decimal)
+        $dealData['client_bonus_rate']       // 25. d (коэффициент - decimal)
+    );
+} else {
+    // Частичный запрос без бонусов - 18 параметров
+    $bind = $stmt->bind_param(
+        $paramTypes,
+        $dealData['deal_id'],                // 1. i
+        $dealData['title'],                  // 2. s
+        $dealData['funnel_id'],              // 3. i
+        $dealData['funnel_name'],            // 4. s
+        $dealData['stage_id'],               // 5. s
+        $dealData['stage_name'],             // 6. s
+        $dealData['date_create'],            // 7. s
+        $dealData['closedate'],              // 8. s
+        $dealData['responsible_id'],         // 9. i
+        $dealData['responsible_name'],       // 10. s
+        $dealData['department_id'],          // 11. i
+        $dealData['department_name'],        // 12. s
+        $dealData['opportunity'],            // 13. d
+        $dealData['channel_id'],             // 14. i
+        $dealData['channel_name'],           // 15. s
+        $dealData['contact_id'],             // 16. i (ID контакта - integer)
+        $dealData['contact_responsible_id'], // 17. i (ID ответственного - integer)
+        $dealData['contact_responsible_name'] // 18. s (имя - string)
+    );
+}
 
 if (!$bind) {
     die("Ошибка привязки параметров: " . htmlspecialchars($stmt->error) . "<br>");
