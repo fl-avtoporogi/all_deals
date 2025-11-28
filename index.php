@@ -379,6 +379,33 @@ function getUserDepartment($userId) {
     return $departmentData;
 }
 
+/**
+ * Получение данных контакта и его ответственного
+ * @param int $contactId ID контакта
+ * @return array [id, responsible_id, responsible_name]
+ */
+function getContactResponsible($contactId) {
+    if (!$contactId) {
+        return ['id' => null, 'responsible_id' => null, 'responsible_name' => null];
+    }
+
+    $result = restSafe('crm.contact.get', ['ID' => $contactId]);
+
+    if ($result && isset($result['result'])) {
+        $contact = $result['result'];
+        $responsibleId = $contact['ASSIGNED_BY_ID'] ?? null;
+        $responsibleName = $responsibleId ? getUserName($responsibleId) : null;
+
+        return [
+            'id' => $contactId,
+            'responsible_id' => $responsibleId,
+            'responsible_name' => $responsibleName
+        ];
+    }
+
+    return ['id' => $contactId, 'responsible_id' => null, 'responsible_name' => null];
+}
+
 // Функция для получения метаданных пользовательских полей и создания карты значений с кэшированием
 function getUserFieldsMap() {
     $cacheFile = __DIR__ . '/userfields_cache.json';
@@ -496,6 +523,9 @@ $categoryId = isset($deal['CATEGORY_ID']) ? $deal['CATEGORY_ID'] : null;
 $stageId = isset($deal['STAGE_ID']) ? $deal['STAGE_ID'] : null;
 $responsibleId = isset($deal['ASSIGNED_BY_ID']) ? $deal['ASSIGNED_BY_ID'] : null;
 
+// Получаем контакт из сделки
+$contactId = isset($deal['CONTACT_ID']) ? $deal['CONTACT_ID'] : null;
+
 // НОВОЕ: Получаем значение канала
 $channelId = isset($deal['UF_CRM_1698142542036']) ? $deal['UF_CRM_1698142542036'] : null;
 $channelName = null;
@@ -528,8 +558,15 @@ $responsibleName = $responsibleId ? getUserName($responsibleId) : null;
 // Получаем информацию об отделе ответственного
 $departmentData = $responsibleId ? getUserDepartment($responsibleId) : ['id' => null, 'name' => null];
 
+// Получаем данные ответственного за контакт
+$contactData = getContactResponsible($contactId);
+
 // Округляем общую сумму сделки с двумя знаками после запятой
 $opportunityAmount = isset($deal['OPPORTUNITY']) ? round((float)$deal['OPPORTUNITY'], 2) : null;
+
+// Расчет премии за клиента (5% от суммы сделки)
+$clientBonusRate = 0.05; // В будущем можно брать из БД
+$clientBonus = $opportunityAmount ? round($opportunityAmount * $clientBonusRate, 2) : 0.00;
 
 // Определяем дату закрытия: только если сделка закрыта (CLOSED = Y)
 $closedate = null;
@@ -562,6 +599,11 @@ $dealData = [
     'bonus_category_b' => $calculations['bonus_category_b'], // Бонус по категории товаров B (рассчитанный)
     'channel_id' => $channelId, // ID канала
     'channel_name' => $channelName, // Название канала
+    'contact_id' => $contactData['id'], // ID контакта из сделки
+    'contact_responsible_id' => $contactData['responsible_id'], // ID ответственного за контакт
+    'contact_responsible_name' => $contactData['responsible_name'], // Имя ответственного за контакт
+    'client_bonus' => $clientBonus, // Премия за клиента (5% от суммы сделки)
+    'client_bonus_rate' => $clientBonusRate, // Коэффициент премии
 ];
 
 // Выводим результат (для отладки, можно убрать в продакшене)
@@ -592,8 +634,13 @@ $stmt = $mysqli->prepare("INSERT INTO all_deals (
     bonus_category_a,
     bonus_category_b,
     channel_id,
-    channel_name
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    channel_name,
+    contact_id,
+    contact_responsible_id,
+    contact_responsible_name,
+    client_bonus,
+    client_bonus_rate
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON DUPLICATE KEY UPDATE
     title = VALUES(title),
     funnel_id = VALUES(funnel_id),
@@ -613,7 +660,12 @@ ON DUPLICATE KEY UPDATE
     bonus_category_a = VALUES(bonus_category_a),
     bonus_category_b = VALUES(bonus_category_b),
     channel_id = VALUES(channel_id),
-    channel_name = VALUES(channel_name)
+    channel_name = VALUES(channel_name),
+    contact_id = VALUES(contact_id),
+    contact_responsible_id = VALUES(contact_responsible_id),
+    contact_responsible_name = VALUES(contact_responsible_name),
+    client_bonus = VALUES(client_bonus),
+    client_bonus_rate = VALUES(client_bonus_rate)
 ");
 
 if (!$stmt) {
@@ -624,7 +676,7 @@ echo "Выражение успешно подготовлено.<br>";
 
 // Привязываем параметры
 $bind = $stmt->bind_param(
-    "isisssssisisddddddis", // i - integer, s - string, d - double (20 параметров)
+    "isisssssisisddddddissiisdd", // i - integer, s - string, d - double (25 параметров)
     $dealData['deal_id'],                // 1. i
     $dealData['title'],                  // 2. s
     $dealData['funnel_id'],              // 3. i
@@ -644,7 +696,12 @@ $bind = $stmt->bind_param(
     $dealData['bonus_category_a'],       // 17. d
     $dealData['bonus_category_b'],       // 18. d
     $dealData['channel_id'],             // 19. i
-    $dealData['channel_name']            // 20. s
+    $dealData['channel_name'],           // 20. s
+    $dealData['contact_id'],             // 21. s (может быть NULL, используем s для гибкости)
+    $dealData['contact_responsible_id'], // 22. i
+    $dealData['contact_responsible_name'], // 23. s
+    $dealData['client_bonus'],           // 24. d
+    $dealData['client_bonus_rate']       // 25. d
 );
 
 if (!$bind) {
