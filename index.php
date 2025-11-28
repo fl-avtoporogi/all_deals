@@ -564,8 +564,23 @@ $contactData = getContactResponsible($contactId);
 // Округляем общую сумму сделки с двумя знаками после запятой
 $opportunityAmount = isset($deal['OPPORTUNITY']) ? round((float)$deal['OPPORTUNITY'], 2) : null;
 
-// Расчет премии за клиента (5% от суммы сделки)
-$clientBonusRate = 0.05; // В будущем можно брать из БД
+// Функция для получения текущего процента премии за клиента из БД
+function getCurrentClientBonusRate($mysqli) {
+    $query = "SELECT bonus_rate FROM bonus_clients ORDER BY created_date DESC LIMIT 1";
+    $result = $mysqli->query($query);
+    
+    if ($result && $row = $result->fetch_assoc()) {
+        $rate = floatval($row['bonus_rate']);
+        echo "Текущий процент премии за клиента: {$rate}%<br>";
+        return $rate / 100; // Конвертируем проценты в коэффициент
+    }
+    
+    echo "ВНИМАНИЕ: Не найден процент премии за клиента, используем 5% по умолчанию<br>";
+    return 0.05; // Значение по умолчанию
+}
+
+// Расчет премии за клиента (берем из БД)
+$clientBonusRate = getCurrentClientBonusRate($mysqli);
 $clientBonus = $opportunityAmount ? round($opportunityAmount * $clientBonusRate, 2) : 0.00;
 
 // Определяем дату закрытия: только если сделка закрыта (CLOSED = Y)

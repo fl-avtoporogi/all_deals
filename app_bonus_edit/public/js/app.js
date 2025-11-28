@@ -19,11 +19,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Загружаем данные
     loadBonusCodes();
 
-    // Обработчики событий
+    // Обработчики событий для вкладки кодов бонусов
     document.getElementById('saveBtn').addEventListener('click', saveChanges);
     document.getElementById('importBtn').addEventListener('click', importCSV);
     document.getElementById('searchInput').addEventListener('input', filterTable);
     document.getElementById('csvFile').addEventListener('change', handleFileSelect);
+
+    // Обработчики событий для вкладки бонусов за клиента
+    document.getElementById('clientBonusForm').addEventListener('submit', addClientBonus);
+
+    // Обработчик переключения вкладок
+    document.getElementById('client-bonus-tab').addEventListener('shown.bs.tab', function() {
+        loadClientBonusData();
+    });
 
     // Подстраиваем высоту iframe в Битрикс24
     // Для локальных приложений BX24 уже готов, init не нужен
@@ -411,6 +419,209 @@ function showInfo(message) {
  */
 function hideLoading() {
     document.getElementById('loadingSpinner').style.display = 'none';
+}
+
+/**
+ * Загрузка данных о бонусах за клиента
+ */
+async function loadClientBonusData() {
+    try {
+        // Показываем индикатор загрузки
+        document.getElementById('clientBonusLoadingSpinner').style.display = 'block';
+        document.getElementById('clientBonusTableContainer').style.display = 'none';
+
+        // Загружаем историю процентов
+        const listResponse = await fetch(`api.php?action=client_bonus_list&member_id=${memberId}`);
+        const listResult = await listResponse.json();
+
+        if (!listResult.success) {
+            showClientBonusError('Ошибка загрузки данных: ' + listResult.error);
+            return;
+        }
+
+        // Загружаем текущий процент
+        const currentResponse = await fetch(`api.php?action=client_bonus_current&member_id=${memberId}`);
+        const currentResult = await currentResponse.json();
+
+        if (currentResult.success) {
+            renderCurrentBonusRate(currentResult.bonus_rate);
+        } else {
+            renderCurrentBonusRate(null);
+        }
+
+        renderClientBonusTable(listResult.data, listResult.stats);
+        hideClientBonusLoading();
+
+    } catch (error) {
+        showClientBonusError('Ошибка подключения к серверу: ' + error.message);
+    }
+}
+
+/**
+ * Отображение текущего процента премии
+ */
+function renderCurrentBonusRate(rate) {
+    const container = document.getElementById('currentBonusRate');
+    
+    if (rate !== null && rate !== undefined) {
+        container.innerHTML = `
+            <div class="display-4 text-primary">
+                <strong>${rate}%</strong>
+            </div>
+            <small class="text-muted">Текущий процент премии за клиента</small>
+        `;
+    } else {
+        container.innerHTML = `
+            <div class="text-muted">
+                <i class="bi bi-dash-circle"></i> Не установлен
+            </div>
+            <small class="text-muted">Нет данных о проценте премии</small>
+        `;
+    }
+}
+
+/**
+ * Отрисовка таблицы истории бонусов за клиента
+ */
+function renderClientBonusTable(data, stats) {
+    const tbody = document.getElementById('clientBonusTableBody');
+    tbody.innerHTML = '';
+
+    if (data.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-muted">
+                    <i class="bi bi-inbox"></i> Нет записей
+                </td>
+            </tr>
+        `;
+    } else {
+        data.forEach(item => {
+            const row = createClientBonusTableRow(item);
+            tbody.appendChild(row);
+        });
+    }
+
+    // Обновляем статистику
+    document.getElementById('totalClientBonusRecords').textContent = stats.total_records;
+
+    // Показываем таблицу
+    document.getElementById('clientBonusTableContainer').style.display = 'block';
+}
+
+/**
+ * Создание строки таблицы истории бонусов за клиента
+ */
+function createClientBonusTableRow(item) {
+    const tr = document.createElement('tr');
+    
+    const createdDate = new Date(item.created_date).toLocaleDateString('ru-RU');
+    const createdAt = new Date(item.created_at).toLocaleString('ru-RU');
+    
+    tr.innerHTML = `
+        <td><strong>${item.id}</strong></td>
+        <td>${createdDate}</td>
+        <td><span class="badge bg-info">${item.bonus_rate}%</span></td>
+        <td><small class="text-muted">${createdAt}</small></td>
+    `;
+    
+    return tr;
+}
+
+/**
+ * Добавление нового процента премии за клиента
+ */
+async function addClientBonus(event) {
+    event.preventDefault();
+    
+    const bonusRateInput = document.getElementById('bonusRate');
+    const bonusRate = parseFloat(bonusRateInput.value);
+    
+    // Валидация
+    if (isNaN(bonusRate) || bonusRate < 0 || bonusRate > 100) {
+        showClientBonusError('Процент должен быть числом от 0 до 100');
+        return;
+    }
+    
+    const btn = document.getElementById('addClientBonusBtn');
+    const originalText = btn.innerHTML;
+    
+    // Показываем индикатор загрузки
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Добавление...';
+    
+    try {
+        const response = await fetch(`api.php?action=client_bonus_add&member_id=${memberId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                bonus_rate: bonusRate 
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+            showClientBonusError('Ошибка добавления: ' + (result.error || 'Неизвестная ошибка'));
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            return;
+        }
+        
+        // Успешно добавлено
+        showClientBonusSuccess(`Новый процент ${result.bonus_rate}% успешно добавлен с датой ${result.created_date}`);
+        
+        // Очищаем форму
+        bonusRateInput.value = '';
+        
+        // Перезагружаем данные
+        loadClientBonusData();
+        
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        
+    } catch (error) {
+        showClientBonusError('Ошибка подключения: ' + error.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+/**
+ * Скрыть индикатор загрузки для бонусов за клиента
+ */
+function hideClientBonusLoading() {
+    document.getElementById('clientBonusLoadingSpinner').style.display = 'none';
+}
+
+/**
+ * Показать ошибку для бонусов за клиента
+ */
+function showClientBonusError(message) {
+    const errorDiv = document.getElementById('clientBonusErrorMessage');
+    const errorText = document.getElementById('clientBonusErrorText');
+    errorText.textContent = message;
+    errorDiv.style.display = 'block';
+
+    setTimeout(() => {
+        errorDiv.style.display = 'none';
+    }, 5000);
+}
+
+/**
+ * Показать успех для бонусов за клиента
+ */
+function showClientBonusSuccess(message) {
+    const successDiv = document.getElementById('clientBonusSuccessMessage');
+    const successText = document.getElementById('clientBonusSuccessText');
+    successText.innerHTML = message;
+    successDiv.style.display = 'block';
+
+    setTimeout(() => {
+        successDiv.style.display = 'none';
+    }, 5000);
 }
 
 /**

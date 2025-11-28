@@ -56,7 +56,7 @@ $apiBaseUrl = 'api.php?member_id=' . urlencode($memberId);
         <div class="row mb-4">
             <div class="col">
                 <h2 class="mb-0">
-                    <!--i class="bi bi-cash-coin"></i--> Редактор кодов бонусов
+                    <!--i class="bi bi-cash-coin"></i--> Редактор бонусов
                 </h2>
                 <?php if (!empty($userName)): ?>
                     <small class="text-muted">Пользователь: <?php echo htmlspecialchars($userName); ?></small>
@@ -64,6 +64,25 @@ $apiBaseUrl = 'api.php?member_id=' . urlencode($memberId);
             </div>
         </div>
 
+        <!-- Вкладки -->
+        <ul class="nav nav-tabs mb-4" id="bonusTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="bonus-codes-tab" data-bs-toggle="tab" data-bs-target="#bonus-codes" type="button" role="tab" aria-controls="bonus-codes" aria-selected="true">
+                    <i class="bi bi-tag"></i> Коды бонусов
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="client-bonus-tab" data-bs-toggle="tab" data-bs-target="#client-bonus" type="button" role="tab" aria-controls="client-bonus" aria-selected="false">
+                    <i class="bi bi-percent"></i> Бонус за клиента
+                </button>
+            </li>
+        </ul>
+
+        <!-- Содержимое вкладок -->
+        <div class="tab-content" id="bonusTabsContent">
+
+        <!-- Вкладка 1: Коды бонусов -->
+        <div class="tab-pane fade show active" id="bonus-codes" role="tabpanel" aria-labelledby="bonus-codes-tab">
         <!-- Секция импорта CSV -->
         <div class="row mb-4">
             <div class="col-md-6">
@@ -202,6 +221,114 @@ $apiBaseUrl = 'api.php?member_id=' . urlencode($memberId);
                         <div id="successMessage" class="alert alert-success" style="display: none;">
                             <i class="bi bi-check-circle"></i>
                             <span id="successText"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- Вкладка 2: Бонус за клиента -->
+        <div class="tab-pane fade" id="client-bonus" role="tabpanel" aria-labelledby="client-bonus-tab">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="bi bi-plus-circle"></i> Добавить новый процент премии
+                            </h5>
+                            <p class="card-text text-muted small">
+                                Укажите процент премии за клиента (от 0% до 100%). Дата установится автоматически.
+                            </p>
+                            <form id="clientBonusForm">
+                                <div class="mb-3">
+                                    <label for="bonusRate" class="form-label">Процент премии</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="bonusRate" 
+                                               min="0" max="100" step="0.01" required placeholder="5.00">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                    <div class="form-text">Введите значение от 0 до 100 с точностью до 0.01%</div>
+                                </div>
+                                <button type="submit" class="btn btn-success" id="addClientBonusBtn">
+                                    <i class="bi bi-plus-lg"></i> Добавить процент
+                                </button>
+                            </form>
+                            <div id="clientBonusResult" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="bi bi-info-circle"></i> Текущий процент
+                            </h5>
+                            <div id="currentBonusRate" class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Таблица с историей процентов -->
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-clock-history"></i> История изменений процентов
+                            </h5>
+
+                            <!-- Статус загрузки -->
+                            <div id="clientBonusLoadingSpinner" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Загрузка данных...</p>
+                            </div>
+
+                            <!-- Таблица истории -->
+                            <div id="clientBonusTableContainer" style="display: none;">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Дата установки</th>
+                                                <th>Процент премии</th>
+                                                <th>Дата добавления</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="clientBonusTableBody">
+                                            <!-- Заполняется через JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i>
+                                        Всего записей: <span id="totalClientBonusRecords">0</span>
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Сообщение об ошибке для бонусов за клиента -->
+                            <div id="clientBonusErrorMessage" class="alert alert-danger" style="display: none;">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span id="clientBonusErrorText"></span>
+                            </div>
+
+                            <!-- Сообщение об успехе для бонусов за клиента -->
+                            <div id="clientBonusSuccessMessage" class="alert alert-success" style="display: none;">
+                                <i class="bi bi-check-circle"></i>
+                                <span id="clientBonusSuccessText"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
