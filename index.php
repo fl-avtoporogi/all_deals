@@ -750,7 +750,7 @@ if ($calculateBonuses) {
         contact_responsible_id = VALUES(contact_responsible_id),
         contact_responsible_name = VALUES(contact_responsible_name)";
         
-    $paramTypes = "isisssssissdisii"; // 18 параметров
+    $paramTypes = "isisssssissdisidi"; // 18 параметров
 }
 
 $stmt = $mysqli->prepare($sql);
