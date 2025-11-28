@@ -6,9 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Bitrix24 integration system for Автопороги company that manages deal processing with automatic bonus calculations based on product bonus codes. The system consists of:
 
-1. **Main webhook handler** (`index.php`) - Processes deals from Bitrix24, calculates bonuses and turnovers by categories A and B
-2. **Bonus code editor app** (`app_bonus_edit/`) - Bitrix24 embedded application for managing bonus codes with modular MVC architecture
-3. **Deal refresh scripts** - Batch processing scripts for updating multiple deals
+1. **Main webhook handler** (`index.php`) - Processes deals from Bitrix24, calculates bonuses and turnovers by categories A and B, **client bonus** (v4.0)
+2. **Bonus code editor app** (`app_bonus_edit/`) - Bitrix24 embedded application for managing bonus codes with modular MVC architecture (v3.1)
+3. **Deal refresh scripts** - Batch processing scripts for updating multiple deals with different optimization strategies
+
+**Current Version:** v4.0 (Client Bonus Feature)
+**Last Updated:** 2025-11-28
 
 ## Architecture
 
@@ -23,7 +26,7 @@ This is a Bitrix24 integration system for Автопороги company that mana
 
 **Key tables:**
 - `bonus_codes` - Maps bonus code (e.g., "A1", "B5") to bonus amount and product name
-- `all_deals` - Stores calculated metrics: `turnover_category_a/b`, `bonus_category_a/b`, `quantity`
+- `all_deals` - Stores calculated metrics: `turnover_category_a/b`, `bonus_category_a/b`, `quantity`, **`contact_responsible_id`, `client_bonus`** (v4.0)
 
 **bonus_codes table structure:**
 ```sql
@@ -40,6 +43,19 @@ CREATE TABLE bonus_codes (
 - Cyrillic А,В → Latin A,B (prevents user input errors)
 - Empty codes → product skipped
 - Code extraction from product's `property221` field
+
+**Key Functions:**
+- `getContactResponsible($contactId)` - Fetches contact and its responsible manager (v4.0)
+- `normalizeBonusCode($code)` - Converts Cyrillic А,В to Latin A,B
+- `getBonusCodesMap()` - Returns cached bonus codes from DB
+- `calculateBonusesAndTurnovers($products, $bonusCodes)` - Main calculation logic
+
+**Client Bonus Feature (v4.0):**
+- Automatically fetches contact linked to deal via Bitrix24 API
+- Gets responsible manager assigned to contact
+- Calculates 5% bonus: `opportunity × 0.05`
+- Saves to DB: `contact_responsible_id`, `contact_responsible_name`, `client_bonus`, `client_bonus_rate`
+- SQL migration: `migration_client_bonus.sql` (creates backup before altering table)
 
 **Test URL:** `https://9dk.ru/webhooks/avtoporogi/all_deals/index.php?deal_id=101827`
 
@@ -129,29 +145,42 @@ curl "https://9dk.ru/webhooks/avtoporogi/all_deals/index.php?deal_id=101827"
 
 ### Refresh Multiple Deals (Batch Processing)
 
+Three strategies available, choose based on dataset size:
+
+**1. refresh_deals_NEW.php** (Recommended for 10K-50K deals)
 ```bash
-# Process all deals (recommended method)
-php refresh_deals_NEW.php
-
-# Test on limited number of deals
-php refresh_deals_NEW.php limit 100
-
-# Reset progress and start over
-php refresh_deals_NEW.php reset
+php refresh_deals_NEW.php              # All deals
+php refresh_deals_NEW.php limit 100    # First 100 deals
+php refresh_deals_NEW.php reset        # Reset progress
 ```
-
-**Features:**
-- Automatic progress tracking (`refresh_progress_new.json`)
+- Batch API requests (50 deals per request)
+- Caches references (stages, users, departments)
+- Progress tracking: `refresh_progress_new.json`
+- Speed: ~500-1000 deals/min
 - Can interrupt and resume
-- Parallel HTTP processing
-- Detailed logging
 
-**Alternative (faster for huge datasets):**
+**2. fast_update_deals.php** (For 50K+ deals - FASTEST)
 ```bash
-php fast_update_deals.php
+php fast_update_deals.php                    # All deals
+php fast_update_deals.php --limit=1000       # First 1000
+php fast_update_deals.php --from-id=100000   # Starting from ID
+php fast_update_deals.php --days=30          # Last 30 days
+php fast_update_deals.php --funnel=5         # Specific funnel
 ```
-- 3-25x faster than serial processing
-- Parallel processing of deals
+- Uses official Bitrix24 optimization (`start=-1`)
+- **3-25x faster** than serial processing
+- Speed: ~2500-6000 deals/min (vs 100-200 in old method)
+- Minimal SELECT queries
+- Progress tracking: `fast_update_progress.json`
+
+**3. refresh_deals.php** (Legacy - NOT RECOMMENDED)
+```bash
+php refresh_deals.php
+```
+- Serial processing with individual HTTP requests
+- **Deprecated** - high API load
+- Speed: ~100-200 deals/min
+- Only use if other methods fail
 
 ### Test Bonus Editor API
 
@@ -278,13 +307,38 @@ $config = [
 - Empty bonus codes: Products skipped silently
 - Invalid codes: Logged but processing continues
 
-## Documentation
+## File Structure Overview
 
-- **Main system:** `README.md` - Complete system guide and quick start
-- **Bonus editor:** `app_bonus_edit/README.md` - Full web app documentation and features
-- **Architecture:** `app_bonus_edit/_docs/REFACTORING.md` - MVC architecture details
-- **Quick guides:** `_docs/` folder - Optimization guides and use cases
-- **Developer guide:** This file (CLAUDE.md)
+**Core Files:**
+- `index.php` (770 lines) - Main webhook handler
+- `refresh_deals_NEW.php` (~1000 lines) - Batch processing with progress
+- `fast_update_deals.php` (~900 lines) - Optimized mass update
+- `refresh_deals.php` (~400 lines) - Legacy serial processing
+
+**Bonus Code Editor (app_bonus_edit/):**
+- `api.php` (32 lines) - REST API gateway
+- `src/Controllers/BonusController.php` - HTTP request handling
+- `src/Services/BonusService.php` - Business logic & validation
+- `src/Services/CsvImportService.php` - CSV parsing & encoding detection
+- `src/Repository/BonusRepository.php` - Database queries (all SQL isolated here)
+- `src/Core/Config.php` - Singleton configuration
+- `src/Core/Database.php` - Singleton MySQL connection
+- `src/Core/Logger.php` - Logging to `logs/bonus_changes.log`
+- `src/Core/Cache.php` - Cache management
+- `public/js/app.js` (~400 lines) - Frontend logic (vanilla JS)
+- `public/css/styles.css` - Bitrix24-style design
+
+**Database:**
+- `migration_client_bonus.sql` - v4.0 migration script with backup
+
+**Documentation:**
+- `README.md` - Main user guide
+- `TESTING_CLIENT_BONUS.md` - v4.0 feature testing guide
+- `CLAUDE.md` - This file (for Claude Code AI assistant)
+- `app_bonus_edit/README.md` - Web app documentation
+- `app_bonus_edit/_docs/REFACTORING.md` - MVC architecture details
+- `_docs/FAST_UPDATE_README.md` - Complete optimization guide
+- `_docs/FILES_OVERVIEW.md` - File navigation
 
 ## File Locations
 
@@ -296,10 +350,93 @@ $config = [
 **Logs:**
 - `app_bonus_edit/logs/bonus_changes.log` - All bonus code modifications
 
+## Key Architectural Patterns
+
+### Singleton Pattern
+`Config` and `Database` classes use singleton - access via `::getInstance()`:
+```php
+$config = Config::getInstance();
+$db = Database::getInstance();
+```
+
+### Repository Pattern
+All database operations isolated in `BonusRepository`:
+```php
+$repository = new BonusRepository($db);
+$bonuses = $repository->findAll();
+$repository->update($code, $bonus);
+```
+
+### Service Layer
+Business logic in services, not controllers:
+```php
+$service = new BonusService($repository);
+$service->validateBonus($code, $amount);
+$service->importFromCsv($csvData);
+```
+
+### Natural Sorting
+Bonus codes use `strnatcmp` for correct order: A1, A2, ..., A10, A11
+```php
+usort($bonuses, fn($a, $b) => strnatcmp($a['code'], $b['code']));
+```
+
 ## Testing
 
-Always test both systems after changes:
-1. **Webhook:** Test with real deal_id
-2. **Bonus editor:** Test list/update/import via Bitrix24 or direct API calls
-3. **Check logs** for errors
-4. **Verify cache** invalidation after updates
+### Webhook Testing
+```bash
+# Test webhook with real deal_id
+curl "https://9dk.ru/webhooks/avtoporogi/all_deals/index.php?deal_id=55"
+
+# Expected output: HTML with $dealData array dump and success message
+```
+
+### Database Testing
+```sql
+-- Check v4.0 columns exist
+DESCRIBE all_deals;
+
+-- Verify client bonus calculation
+SELECT deal_id, opportunity, client_bonus,
+       ROUND(opportunity * 0.05, 2) as expected_bonus
+FROM all_deals WHERE client_bonus > 0
+LIMIT 5;
+```
+
+### API Testing
+```bash
+# List bonus codes
+curl "https://9dk.ru/webhooks/avtoporogi/all_deals/app_bonus_edit/api.php?action=list&member_id=test"
+
+# Should return JSON with success: true and array of bonuses
+```
+
+### Full Testing Workflow (v4.0)
+1. Run SQL migration: `migration_client_bonus.sql`
+2. Test webhook with deal containing contact
+3. Check DB: `SELECT contact_responsible_name, client_bonus FROM all_deals WHERE deal_id=55;`
+4. Verify calculation: `client_bonus = opportunity × 0.05`
+5. Test without contact: data should be NULL, bonus should be calculated
+6. Check logs: `app_bonus_edit/logs/bonus_changes.log`
+
+## Debugging Tips
+
+**Issue:** Contact data not fetching
+- Check Bitrix24 API access (tokens in `app_bonus_edit/settings.json`)
+- Use `restSafe()` - won't crash if API fails
+- Check `CONTACT_ID` field exists in deal
+
+**Issue:** Wrong bonus calculation
+- Verify `client_bonus_rate = 0.05` (5%)
+- Check `opportunity` field is numeric
+- Ensure rounding to 2 decimals
+
+**Issue:** Cache stale data
+- Clear manually: delete `*_cache.json` files
+- TTL is 1 hour - cache auto-refreshes after
+- Cache invalidates on API update actions
+
+**Issue:** Database connection failing
+- Check `../db_connect.php` exists one level up from /dev
+- Verify credentials in config
+- Ensure user has SELECT, INSERT, UPDATE permissions
