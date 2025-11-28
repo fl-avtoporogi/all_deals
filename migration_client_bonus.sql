@@ -9,15 +9,8 @@ CREATE TABLE bonus_clients (
     INDEX idx_created_date (created_date)
 ) COMMENT='История процентов премии за клиента';
 
--- Добавляем поля в основную таблицу all_deals
-ALTER TABLE all_deals 
-ADD COLUMN client_bonus DECIMAL(12,2) DEFAULT 0.00 COMMENT 'Премия за клиента',
-ADD COLUMN client_bonus_rate DECIMAL(5,2) DEFAULT 0.00 COMMENT 'Процент премии за клиента';
-
--- Добавляем индексы для новых полей
-ALTER TABLE all_deals 
-ADD INDEX idx_client_bonus (client_bonus),
-ADD INDEX idx_client_bonus_rate (client_bonus_rate);
+-- Поля client_bonus и client_bonus_rate уже существуют в таблице all_deals
+-- Индексы уже добавлены ранее
 
 -- Вставляем начальное значение процента премии (текущие 5%)
 INSERT INTO bonus_clients (created_date, bonus_rate) 
