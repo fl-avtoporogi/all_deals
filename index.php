@@ -750,7 +750,7 @@ if ($calculateBonuses) {
         contact_responsible_id = VALUES(contact_responsible_id),
         contact_responsible_name = VALUES(contact_responsible_name)";
         
-    $paramTypes = "isisssssisisdisii s"; // 18 параметров
+    $paramTypes = "isisssssisisdisiis"; // 18 параметров
 }
 
 $stmt = $mysqli->prepare($sql);
@@ -760,6 +760,10 @@ if (!$stmt) {
 }
 
 echo "Выражение успешно подготовлено.<br>";
+
+// Отладочный вывод строки типов
+echo "DEBUG: Строка типов параметров: '" . htmlspecialchars($paramTypes) . "'<br>";
+echo "DEBUG: Длина строки типов: " . strlen($paramTypes) . "<br>";
 
 // Привязываем параметры в зависимости от типа запроса
 if ($calculateBonuses) {
