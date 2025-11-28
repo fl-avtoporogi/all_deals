@@ -113,6 +113,9 @@ function createTableRow(item, index) {
         <td>
             <strong>${escapeHtml(item.code)}</strong>
         </td>
+        <td class="bonus-name-cell">
+            <small class="text-muted">${escapeHtml(item.name)}</small>
+        </td>
         <td>
             <input type="number"
                    class="form-control bonus-input form-control-sm"
@@ -327,7 +330,7 @@ async function importCSV() {
 }
 
 /**
- * Фильтрация таблицы по коду (все 3 колонки)
+ * Фильтрация таблицы по коду и наименованию (все 3 колонки)
  */
 function filterTable() {
     const searchValue = document.getElementById('searchInput').value.toLowerCase();
@@ -338,7 +341,8 @@ function filterTable() {
 
         rows.forEach(row => {
             const code = row.querySelector('td:first-child strong').textContent.toLowerCase();
-            if (code.includes(searchValue)) {
+            const name = row.querySelector('.bonus-name-cell')?.textContent.toLowerCase() || '';
+            if (code.includes(searchValue) || name.includes(searchValue)) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';

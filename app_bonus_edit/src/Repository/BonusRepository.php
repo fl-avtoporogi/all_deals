@@ -22,7 +22,7 @@ class BonusRepository
     public function findAll()
     {
         // Получаем все коды без сортировки
-        $query = "SELECT code, bonus_amount FROM bonus_codes";
+        $query = "SELECT code, bonus_amount, Name FROM bonus_codes";
         $result = $this->db->query($query);
 
         if (!$result) {
@@ -33,7 +33,8 @@ class BonusRepository
         while ($row = $result->fetch_assoc()) {
             $codes[] = [
                 'code' => $row['code'],
-                'bonus' => floatval($row['bonus_amount'])
+                'bonus' => floatval($row['bonus_amount']),
+                'name' => $row['Name'] ?: ''
             ];
         }
 
@@ -50,7 +51,7 @@ class BonusRepository
      */
     public function findByCode($code)
     {
-        $stmt = $this->db->prepare("SELECT code, bonus_amount FROM bonus_codes WHERE code = ?");
+        $stmt = $this->db->prepare("SELECT code, bonus_amount, Name FROM bonus_codes WHERE code = ?");
         $stmt->bind_param("s", $code);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -58,7 +59,8 @@ class BonusRepository
         if ($row = $result->fetch_assoc()) {
             return [
                 'code' => $row['code'],
-                'bonus' => floatval($row['bonus_amount'])
+                'bonus' => floatval($row['bonus_amount']),
+                'name' => $row['Name'] ?: ''
             ];
         }
 

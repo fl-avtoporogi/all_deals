@@ -480,3 +480,15 @@ strong {
     font-weight: 600;
     color: #2C3E50;
 }
+
+/* === Стиль для колонки Наименование === */
+.bonus-name-cell {
+    max-width: 120px;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.bonus-name-cell small {
+    display: block;
+    line-height: 1.3;
+}

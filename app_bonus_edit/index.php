@@ -133,6 +133,7 @@ $apiBaseUrl = 'api.php?member_id=' . urlencode($memberId);
                                             <thead class="table-dark">
                                                 <tr>
                                                     <th>Код</th>
+                                                    <th>Наименование</th>
                                                     <th>Бонус (₽)</th>
                                                     <th>Кат.</th>
                                                 </tr>
@@ -151,6 +152,7 @@ $apiBaseUrl = 'api.php?member_id=' . urlencode($memberId);
                                             <thead class="table-dark">
                                                 <tr>
                                                     <th>Код</th>
+                                                    <th>Наименование</th>
                                                     <th>Бонус (₽)</th>
                                                     <th>Кат.</th>
                                                 </tr>
@@ -169,6 +171,7 @@ $apiBaseUrl = 'api.php?member_id=' . urlencode($memberId);
                                             <thead class="table-dark">
                                                 <tr>
                                                     <th>Код</th>
+                                                    <th>Наименование</th>
                                                     <th>Бонус (₽)</th>
                                                     <th>Кат.</th>
                                                 </tr>
