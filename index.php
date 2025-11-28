@@ -1,5 +1,5 @@
 <?php
-echo "=== VERSION: 2025-11-17 CLOSEDATE-FIX-v8 ===<br>";
+echo "=== VERSION: 2025-11-17 CLOSEDATE-FIX-v9-BITRIX24-SYNC ===<br>";
 
 // БД ДЛЯ ВСЕХ СДЕЛОК С РАСЧЕТОМ БОНУСОВ!!!
 //https://avtoporogi.bitrix24.ru/company/personal/user/9/tasks/task/view/24611/ - задача
@@ -483,6 +483,73 @@ function convertToMySQLDate($dateStr) {
     }
 }
 
+// Функция для расчета дополнительных полей бонусов
+function calculateBonusRatios($bonusCategoryA, $bonusCategoryB) {
+    $totalBonus = $bonusCategoryA + $bonusCategoryB;
+    $bonusRatioB = ($totalBonus > 0) ? ($bonusCategoryB / $totalBonus) : 0;
+    $totalBonusAmount = $totalBonus;
+    
+    return [
+        'bonus_b_ratio' => round($bonusRatioB, 4), // с точностью до 4 знаков
+        'bonus_total' => round($totalBonusAmount, 2)
+    ];
+}
+
+// Функция для получения текущих значений полей из сделки
+function getCurrentDealValues($dealId) {
+    $result = rest('crm.deal.get', ['ID' => $dealId]);
+    if ($result['result']) {
+        $deal = $result['result'];
+        return [
+            'client_bonus' => $deal['UF_CRM_1764350917'] ?? 0,
+            'contact_responsible_id' => $deal['UF_CRM_1764350942'] ?? 0,
+            'bonus_category_a' => $deal['UF_CRM_BON_KAT_TOV_A'] ?? 0,
+            'bonus_category_b' => $deal['UF_CRM_BON_KAT_TOV_B'] ?? 0,
+            'bonus_b_ratio' => $deal['UF_CRM_1764350853'] ?? 0,
+            'bonus_total' => $deal['UF_CRM_1764350890'] ?? 0
+        ];
+    }
+    return null;
+}
+
+// Функция для проверки необходимости обновления (защита от зацикливания)
+function needsUpdate($currentValues, $newValues, $tolerance = 0.01) {
+    return (
+        abs($currentValues['client_bonus'] - $newValues['client_bonus']) > $tolerance ||
+        $currentValues['contact_responsible_id'] != $newValues['contact_responsible_id'] ||
+        abs($currentValues['bonus_category_a'] - $newValues['bonus_category_a']) > $tolerance ||
+        abs($currentValues['bonus_category_b'] - $newValues['bonus_category_b']) > $tolerance ||
+        abs($currentValues['bonus_b_ratio'] - $newValues['bonus_b_ratio']) > $tolerance ||
+        abs($currentValues['bonus_total'] - $newValues['bonus_total']) > $tolerance
+    );
+}
+
+// Функция для обновления сделки в Битрикс24
+function updateDealWithBonusData($dealId, $bonusData) {
+    $updateFields = [
+        'UF_CRM_1764350917' => $bonusData['client_bonus'],
+        'UF_CRM_1764350942' => $bonusData['contact_responsible_id'],
+        'UF_CRM_BON_KAT_TOV_A' => $bonusData['bonus_category_a'],
+        'UF_CRM_BON_KAT_TOV_B' => $bonusData['bonus_category_b'],
+        'UF_CRM_1764350853' => $bonusData['bonus_b_ratio'],
+        'UF_CRM_1764350890' => $bonusData['bonus_total']
+    ];
+    
+    echo "Обновляем поля сделки в Битрикс24...<br>";
+    $result = restSafe('crm.deal.update', [
+        'ID' => $dealId,
+        'FIELDS' => $updateFields
+    ]);
+    
+    if ($result) {
+        echo "Данные сделки успешно обновлены в Битрикс24.<br>";
+        return true;
+    } else {
+        echo "Ошибка при обновлении сделки в Битрикс24 (игнорируем).<br>";
+        return false;
+    }
+}
+
 // ==================== ОСНОВНАЯ ЛОГИКА ====================
 
 // Получение deal_id из входящего запроса
@@ -847,6 +914,41 @@ if ($stmt->execute()) {
             echo "Дата успешно обновлена прямым SQL-запросом.<br>";
         } else {
             echo "Ошибка при прямом обновлении даты: " . htmlspecialchars($mysqli->error) . "<br>";
+        }
+    }
+    
+    // Только если рассчитывали бонусы - обновляем данные в Битрикс24
+    if ($calculateBonuses) {
+        // Получаем текущие значения из сделки
+        $currentValues = getCurrentDealValues($dealId);
+        
+        if ($currentValues) {
+            // Рассчитываем новые значения
+            $ratios = calculateBonusRatios($calculations['bonus_category_a'], $calculations['bonus_category_b']);
+            
+            $newValues = [
+                'client_bonus' => $clientBonus,
+                'contact_responsible_id' => $contactData['responsible_id'],
+                'bonus_category_a' => $calculations['bonus_category_a'],
+                'bonus_category_b' => $calculations['bonus_category_b'],
+                'bonus_b_ratio' => $ratios['bonus_b_ratio'],
+                'bonus_total' => $ratios['bonus_total']
+            ];
+            
+            echo "=== СИНХРОНИЗАЦИЯ С БИТРИКС24 ===<br>";
+            echo "Текущие значения в сделке: " . json_encode($currentValues, JSON_UNESCAPED_UNICODE) . "<br>";
+            echo "Новые значения для записи: " . json_encode($newValues, JSON_UNESCAPED_UNICODE) . "<br>";
+            
+            // Проверяем нужно ли обновлять
+            if (needsUpdate($currentValues, $newValues)) {
+                echo "Обнаружены отличия - обновляем данные в сделке Битрикс24...<br>";
+                updateDealWithBonusData($dealId, $newValues);
+            } else {
+                echo "Данные в сделке актуальны, обновление не требуется.<br>";
+            }
+            echo "=============================<br>";
+        } else {
+            echo "Не удалось получить текущие значения из сделки для проверки.<br>";
         }
     }
 } else {
